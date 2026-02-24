@@ -18,7 +18,6 @@ userSchema.methods.matchPassword = async function (
   return await bcrypt.compare(enteredPassword, this.password as string);
 };
 
-// ✅ async без next — Mongoose 6+ сам чекає на Promise
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);

@@ -4,7 +4,7 @@ import { IProduct, IReview } from "../types";
 const reviewSchema = new Schema<IReview>(
   {
     name: { type: String, required: true },
-    rating: { type: Number, required: true }, // ← виправлено з "reating"
+    rating: { type: Number, required: true },
     comment: { type: String, required: true },
     user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
   },

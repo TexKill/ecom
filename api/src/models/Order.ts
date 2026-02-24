@@ -1,20 +1,17 @@
-const mongoose = require("mongoose");
+import { Schema, model } from "mongoose";
+import { IOrder, IOrderItem } from "../types";
 
-const orderItemSchema = new mongoose.Schema({
+const orderItemSchema = new Schema<IOrderItem>({
   name: { type: String, required: true },
   qty: { type: Number, required: true },
   image: { type: String, required: true },
   price: { type: Number, required: true },
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
-    required: true,
-  },
+  product: { type: Schema.Types.ObjectId, required: true, ref: "Product" },
 });
 
-const orderSchema = new mongoose.Schema(
+const orderSchema = new Schema<IOrder>(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "User" },
+    user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     orderItems: [orderItemSchema],
     shippingAddress: {
       address: { type: String, required: true },
@@ -39,4 +36,4 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Order", orderSchema);
+export const Order = model<IOrder>("Order", orderSchema);
