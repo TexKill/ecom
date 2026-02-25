@@ -1,7 +1,3 @@
 export default function Home() {
-  return (
-    <main>
-      <h1>E-Commerce Store</h1>
-    </main>
-  );
+  return <main></main>;
 }
