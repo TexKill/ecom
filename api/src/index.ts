@@ -8,6 +8,7 @@ import userRoute from "./routes/User";
 import productRoute from "./routes/Product";
 import orderRoute from "./routes/Order";
 import uploadRoute from "./routes/Upload";
+import cartRouter from "./routes/Cart";
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -30,6 +31,7 @@ app.use("/api/users", userRoute);
 app.use("/api/products", productRoute);
 app.use("/api/orders", orderRoute);
 app.use("/api/upload", uploadRoute);
+app.use("/api/cart", cartRouter);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;

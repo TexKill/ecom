@@ -8,6 +8,20 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
+    cart: [
+      {
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        name: { type: String, required: true },
+        image: { type: String },
+        price: { type: Number, required: true },
+        countInStock: { type: Number, required: true },
+        qty: { type: Number, required: true, default: 1 },
+      },
+    ],
   },
   { timestamps: true },
 );

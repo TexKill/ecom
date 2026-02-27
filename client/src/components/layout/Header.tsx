@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   Search,
   ShoppingCart,
@@ -17,8 +17,21 @@ import { useCartStore } from "@/store/cartStore";
 
 export default function Header() {
   const router = useRouter();
+
+  // Hydration-safe Zustand reading (bypasses the useEffect issue entirely)
+  const isHydrated = useSyncExternalStore(
+    (subscribe) => {
+      window.addEventListener("storage", subscribe);
+      return () => window.removeEventListener("storage", subscribe);
+    },
+    () => true,
+    () => false, // Server always returns false
+  );
+
   const { user, logout } = useAuthStore();
   const totalQty = useCartStore((s) => s.totalQty());
+  const clearCart = useCartStore((s) => s.clearCart);
+
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -28,13 +41,13 @@ export default function Header() {
   };
 
   const handleLogout = () => {
+    clearCart();
     logout();
     router.push("/login");
   };
 
   return (
-    <header className="w-full">
-      {/* Main header */}
+    <header className="w-full sticky top-0 z-50 bg-white">
       <div className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
           {/* Logo */}
@@ -89,29 +102,34 @@ export default function Header() {
 
             <Link href="/cart" className="relative">
               <ShoppingCart size={22} />
-              {totalQty > 0 && (
+              {isHydrated && totalQty > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {totalQty}
                 </span>
               )}
             </Link>
 
-            {user ? (
-              <div className="flex items-center gap-3">
-                <Link href="/account">
+            {isHydrated ? (
+              user ? (
+                <div className="flex items-center gap-3">
+                  <Link href="/account">
+                    <User size={22} />
+                  </Link>
+                  <button onClick={handleLogout}>
+                    <LogOut
+                      size={20}
+                      className="text-gray-500 hover:text-red-500"
+                    />
+                  </button>
+                </div>
+              ) : (
+                <Link href="/login">
                   <User size={22} />
                 </Link>
-                <button onClick={handleLogout}>
-                  <LogOut
-                    size={20}
-                    className="text-gray-500 hover:text-red-500"
-                  />
-                </button>
-              </div>
+              )
             ) : (
-              <Link href="/login">
-                <User size={22} />
-              </Link>
+              // Changed to w-5.5 h-5.5 as suggested by Tailwind
+              <div className="w-5.5 h-5.5"></div>
             )}
 
             {/* Burger — mobile */}
@@ -126,7 +144,7 @@ export default function Header() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden px-4 pb-4 flex flex-col gap-3 text-sm font-medium border-t pt-3">
+          <div className="md:hidden px-4 pb-4 flex flex-col gap-3 text-sm font-medium border-t pt-3 bg-white">
             <Link href="/" onClick={() => setMenuOpen(false)}>
               Home
             </Link>
@@ -138,7 +156,7 @@ export default function Header() {
             </Link>
             <form
               onSubmit={handleSearch}
-              className="flex items-center bg-gray-100 rounded px-3 py-2 gap-2"
+              className="flex items-center bg-gray-100 rounded px-3 py-2 gap-2 mt-2"
             >
               <input
                 type="text"

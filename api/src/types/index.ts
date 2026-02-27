@@ -1,5 +1,14 @@
 import { Document, Types } from "mongoose";
 
+export interface ICartItem {
+  productId: Types.ObjectId;
+  name: string;
+  image: string;
+  price: number;
+  countInStock: number;
+  qty: number;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -7,6 +16,7 @@ export interface IUser extends Document {
   password: string;
   isAdmin: boolean;
   createdAt: Date;
+  cart: ICartItem[]; // ADD THIS
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
