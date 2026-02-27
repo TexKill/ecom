@@ -1,60 +1,68 @@
-# 🛒 E-Commerce Platform
+# 🛒 Ecom — Full-Stack E-Commerce App
 
-A scalable, full-stack e-commerce platform built with React, Next.js, TypeScript, and Node.js as a university thesis project. The platform supports product browsing, user authentication, order management, and an admin dashboard.
+A full-stack e-commerce application built with Node.js, Express, MongoDB, and Next.js 15.
 
 ## 🚀 Tech Stack
 
-### Backend
-- **Node.js** + **Express** — REST API server
-- **TypeScript** — static typing across the entire codebase
-- **MongoDB** + **Mongoose** — NoSQL database with typed schemas
-- **JWT (jsonwebtoken)** — stateless authentication
-- **bcryptjs** — secure password hashing
-- **express-async-handler** — clean async error handling
+### Backend (`/api`)
+- **Node.js** + **Express** — REST API
+- **TypeScript** — type safety
+- **MongoDB** + **Mongoose** — database
+- **JWT** — authentication
+- **bcryptjs** — password hashing
+- **Cloudinary** + **Multer** — image uploads
 
-### Frontend _(in development)_
-- **Next.js 15** (App Router) — SSR/SSG for SEO-optimized pages
-- **React 18** + **TypeScript**
-- **Tailwind CSS** — utility-first styling
+### Frontend (`/client`)
+- **Next.js 15** (App Router, Turbopack)
+- **TypeScript**
+- **Tailwind CSS** — styling
 - **Zustand** — global state management (cart, user)
 - **React Query** — server state & caching
+- **Lucide React** — icons
+
+---
 
 ## 📁 Project Structure
 
 ```
-ecommerce/
-├── api/                             # Backend (Node.js + Express + TypeScript)
+ecom/
+├── api/                        # Express backend
 │   ├── src/
-│   │   ├── data/                    # Seed data
+│   │   ├── data/               # Seed data
 │   │   │   ├── Products.ts
 │   │   │   └── Users.ts
 │   │   ├── middleware/
-│   │   │   └── Auth.ts              # JWT route protection middleware
-│   │   ├── models/                  # Mongoose models
+│   │   │   └── Auth.ts         # JWT route protection
+│   │   ├── models/
 │   │   │   ├── User.ts
 │   │   │   ├── Product.ts
 │   │   │   └── Order.ts
-│   │   ├── routes/                  # Express route handlers
+│   │   ├── routes/
 │   │   │   ├── User.ts
-│   │   │   ├── Product.ts           # in development
-│   │   │   └── Order.ts             # in development
+│   │   │   ├── Product.ts
+│   │   │   ├── Order.ts
+│   │   │   └── Upload.ts       # Cloudinary image upload
 │   │   ├── types/
-│   │   │   ├── index.ts             # IUser, IProduct, IOrder, IReview
-│   │   │   └── express.d.ts         # Express Request extension (req.user)
+│   │   │   ├── index.ts        # IUser, IProduct, IOrder
+│   │   │   └── express.d.ts    # Express Request extension
 │   │   ├── utils/
-│   │   │   └── tokenGenerate.ts     # JWT token generator
-│   │   ├── databaseSeeder.ts        # Seed routes
-│   │   └── index.ts                 # App entry point
-│   ├── .env
+│   │   │   └── tokenGenerate.ts
+│   │   ├── databaseSeeder.ts
+│   │   └── index.ts
+│   ├── .env.example
 │   ├── tsconfig.json
 │   └── package.json
 │
-└── client/                          # Frontend (Next.js 15) — in development
-    ├── app/
-    ├── components/
-    ├── types/
+└── client/                     # Next.js frontend
+    ├── src/
+    │   ├── app/                # App Router pages
+    │   ├── components/         # Reusable components
+    │   ├── store/              # Zustand stores
+    │   └── types/              # TypeScript types
     └── package.json
 ```
+
+---
 
 ## ⚙️ Getting Started
 
@@ -67,39 +75,31 @@ ecommerce/
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/TexKill/ecommerce.git
-cd ecommerce
-
-# Install backend dependencies
-cd api
-npm install
+git clone https://github.com/TexKill/ecom.git
+cd ecom
 ```
 
-### Environment Variables
-
-Create a `.env` file inside the `api/` directory:
-
-```env
-PORT=9000
-MONGOOSEDB_URL=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-```
-
-> ⚠️ Never commit your `.env` file. It is already listed in `.gitignore`.
-
-### Running the Development Server
+### Backend
 
 ```bash
 cd api
+npm install
+cp .env.example .env   # fill in your values
 npm run dev
 ```
 
-Expected output:
+### Frontend
+
+```bash
+cd client
+npm install
+npm run dev
 ```
-Server is listening on port: 9000
-Connected to MongoDB
-```
+
+API runs on `http://localhost:9000`  
+Client runs on `http://localhost:3000`
+
+---
 
 ### Building for Production
 
@@ -108,25 +108,24 @@ npm run build   # Compiles TypeScript to dist/
 npm start       # Runs compiled dist/index.js
 ```
 
+---
+
 ## 🌱 Database Seeding
 
-Populate the database with sample users and products for development and testing.
-
-> ⚠️ Users must be seeded **before** products, as products require an admin user reference.
+> ⚠️ Seed users **before** products.
 
 ```bash
-# Step 1 — seed users
 POST http://localhost:9000/api/seed/users
-
-# Step 2 — seed products
 POST http://localhost:9000/api/seed/products
 ```
+
+---
 
 ## 📡 API Reference
 
 ### 🔑 Authentication
 
-All protected routes require a **JWT Bearer Token** in the request header:
+All protected routes require a **JWT Bearer Token**:
 
 ```
 Authorization: Bearer <your_token>
@@ -165,80 +164,83 @@ Authorization: Bearer <your_token>
 
 ---
 
-### Products `/api/products` _(in development)_
+### Products `/api/products`
 
 | Method | Endpoint | Description | Protected |
 |--------|----------|-------------|-----------|
-| `GET` | `/` | Get all products (with pagination & filters) | — |
-| `GET` | `/:id` | Get single product by ID | — |
+| `GET` | `/` | Get all products | — |
+| `GET` | `/:id` | Get single product | — |
 | `POST` | `/` | Create a new product | ✅ Admin |
 | `PUT` | `/:id` | Update product details | ✅ Admin |
 | `DELETE` | `/:id` | Delete a product | ✅ Admin |
-| `POST` | `/:id/reviews` | Add a product review | ✅ JWT |
 
 ---
 
-### Orders `/api/orders` _(in development)_
+### Orders `/api/orders`
 
 | Method | Endpoint | Description | Protected |
 |--------|----------|-------------|-----------|
 | `POST` | `/` | Create a new order | ✅ JWT |
-| `GET` | `/myorders` | Get logged-in user's orders | ✅ JWT |
+| `GET` | `/my` | Get logged-in user's orders | ✅ JWT |
 | `GET` | `/:id` | Get order by ID | ✅ JWT |
-| `PUT` | `/:id/pay` | Mark order as paid | ✅ JWT |
-| `PUT` | `/:id/deliver` | Mark order as delivered | ✅ Admin |
 
 ---
 
-### Admin `/api/admin` _(in development)_
+### Upload `/api/upload`
 
 | Method | Endpoint | Description | Protected |
 |--------|----------|-------------|-----------|
-| `GET` | `/users` | Get all users | ✅ Admin |
-| `DELETE` | `/users/:id` | Delete a user | ✅ Admin |
-| `GET` | `/orders` | Get all orders | ✅ Admin |
+| `POST` | `/` | Upload image to Cloudinary | — |
+
+**Request:** `form-data` з полем `image` (файл)  
+**Response:**
+```json
+{
+  "url": "https://res.cloudinary.com/..."
+}
+```
+
+---
 
 ## 👤 Test Accounts
 
-After running the seed route, the following accounts are available:
+After seeding the database, test accounts are available.
+Credentials are defined in `api/src/data/Users.ts`.
 
-| Email | Password | Role |
-|-------|----------|------|
-| `admin@example.com` | `123456` | Admin |
-| `john@example.com` | `123456` | User |
+---
 
-## 📌 Development Roadmap
+## 📌 Roadmap
 
 ### Backend
 - [x] Project architecture & folder structure
-- [x] TypeScript migration (models, routes, middleware)
+- [x] TypeScript setup
 - [x] MongoDB connection & Mongoose schemas
 - [x] JWT authentication & route protection
 - [x] User registration, login, profile
 - [x] Database seeder (users + products)
-- [ ] Product CRUD routes
-- [ ] Order management routes
+- [x] Product CRUD routes
+- [x] Order management routes
+- [x] Image upload with Cloudinary
 - [ ] Admin routes & middleware
-- [ ] Input validation (Zod or express-validator)
-- [ ] Pagination & search for products
+- [ ] Input validation (Zod)
+- [ ] Pagination & search
 
 ### Frontend
-- [ ] Next.js 15 project setup
-- [ ] Authentication flow (login/register pages)
-- [ ] Product listing & detail pages
-- [ ] Shopping cart (Zustand)
+- [x] Next.js 15 project setup
+- [x] Product listing page
+- [x] Product detail page
+- [x] Shopping cart (Zustand)
+- [ ] Authentication flow
 - [ ] Checkout flow
 - [ ] Order history page
 - [ ] Admin dashboard
 
 ### DevOps
-- [ ] Docker + docker-compose setup
+- [ ] Docker + docker-compose
 - [ ] CI/CD pipeline
 - [ ] Deployment to VPS
 
-## 🤝 Contributing
-
-This is a university thesis project and is not open for external contributions at this time.
+---
 
 ## 📄 License
 
