@@ -3,11 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CheckoutPage() {
+export default function WishlistPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/placeorder");
+    router.replace("/favorites");
   }, [router]);
 
   return null;

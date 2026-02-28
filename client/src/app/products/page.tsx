@@ -1,0 +1,55 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { getProducts } from "@/lib/api";
+import { IProduct } from "@/types";
+import ProductCard from "@/components/products/ProductCard";
+
+export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const keyword = searchParams.get("keyword") || "";
+
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getProducts(keyword);
+        setProducts(data.products);
+      } catch {
+        setError("Failed to load products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [keyword]);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">
+        {keyword ? `Search: ${keyword}` : "All Products"}
+      </h1>
+
+      {loading && <p className="text-gray-500">Loading products...</p>}
+      {!loading && error && <p className="text-red-500">{error}</p>}
+      {!loading && !error && products.length === 0 && (
+        <p className="text-gray-500">No products found.</p>
+      )}
+
+      {!loading && !error && products.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

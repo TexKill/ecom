@@ -7,13 +7,37 @@ const axiosInstance = axios.create({
   },
 });
 
+const getTokenFromStorage = (): string | null => {
+  const legacyUser = localStorage.getItem("user");
+  if (legacyUser) {
+    try {
+      const parsed = JSON.parse(legacyUser);
+      if (parsed?.token) return parsed.token;
+    } catch {
+      // ignore invalid payload
+    }
+  }
+
+  const authState = localStorage.getItem("auth");
+  if (authState) {
+    try {
+      const parsed = JSON.parse(authState);
+      const token = parsed?.state?.user?.token;
+      if (token) return token;
+    } catch {
+      // ignore invalid payload
+    }
+  }
+
+  return null;
+};
+
 // Automatic token injection for authenticated requests
 axiosInstance.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
-      const user = localStorage.getItem("user");
-      if (user) {
-        const { token } = JSON.parse(user);
+      const token = getTokenFromStorage();
+      if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
@@ -29,6 +53,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("user");
+        localStorage.removeItem("auth");
         window.location.href = "/login";
       }
     }

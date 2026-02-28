@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +15,9 @@ export default function LoginPage() {
   const redirect = searchParams.get("redirect") || "/";
   const setUser = useAuthStore((s) => s.setUser);
   const loadCartFromServer = useCartStore((s) => s.loadCartFromServer);
+  const loadFavoritesFromServer = useFavoritesStore(
+    (s) => s.loadFavoritesFromServer,
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,16 +30,14 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:9000/api/users/login",
-        {
-          email,
-          password,
-        },
-      );
+      const { data } = await axiosInstance.post("/api/users/login", {
+        email,
+        password,
+      });
 
       setUser(data);
       await loadCartFromServer(data.token);
+      await loadFavoritesFromServer(data.token);
       router.replace(redirect);
     } catch (err) {
       if (axios.isAxiosError(err)) {

@@ -29,6 +29,14 @@ export interface IProduct {
   countInStock: number;
 }
 
+export interface IFavoriteItem {
+  productId: string;
+  name: string;
+  image: string;
+  price: number;
+  countInStock: number;
+}
+
 export interface IOrderItem {
   name: string;
   qty: number;

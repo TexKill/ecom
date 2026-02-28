@@ -1,8 +1,11 @@
 import express, { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Order } from "../models/Order";
+import { Product } from "../models/Product";
 import { protect } from "../middleware/Auth";
 import { admin } from "../middleware/Admin";
+import { validateBody } from "../middleware/Validate";
+import { createOrderSchema, payOrderSchema } from "../validation/order";
 
 const orderRoute = express.Router();
 
@@ -12,23 +15,68 @@ const orderRoute = express.Router();
 orderRoute.post(
   "/",
   protect,
+  validateBody(createOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const {
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      shippingPrice,
-      totalPrice,
-    } = req.body;
+    const { orderItems, shippingAddress, paymentMethod } = req.body;
 
-    if (!orderItems || orderItems.length === 0) {
+    const uniqueProductIds: string[] = [
+      ...new Set(
+        (orderItems as Array<{ product: string }>)
+          .map((item) => item.product?.toString())
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    const products = await Product.find({
+      _id: { $in: uniqueProductIds },
+    }).select("_id name image price countInStock");
+
+    if (products.length !== uniqueProductIds.length) {
       res.status(400);
-      throw new Error("No order items");
+      throw new Error("One or more products are invalid");
     }
+
+    const productById = new Map(products.map((p) => [p._id.toString(), p]));
+
+    const normalizedOrderItems = (orderItems as Array<{ product: string; qty: number }>).map(
+      (item: { product: string; qty: number }) => {
+        const product = productById.get(item.product?.toString());
+        const qty = Number(item.qty);
+
+        if (!product) {
+          res.status(400);
+          throw new Error(`Product not found: ${item.product}`);
+        }
+        if (!Number.isFinite(qty) || qty <= 0) {
+          res.status(400);
+          throw new Error("Invalid quantity in order item");
+        }
+        if (qty > product.countInStock) {
+          res.status(400);
+          throw new Error(`Insufficient stock for product: ${product.name}`);
+        }
+
+        return {
+          name: product.name,
+          qty,
+          image: product.image,
+          price: product.price,
+          product: product._id,
+        };
+      },
+    );
+
+    const itemsPrice = normalizedOrderItems.reduce(
+      (sum: number, item: { price: number; qty: number }) =>
+        sum + item.price * item.qty,
+      0,
+    );
+    const shippingPrice = itemsPrice > 100 ? 0 : 10;
+    const totalPrice = Number((itemsPrice + shippingPrice).toFixed(2));
 
     const order = new Order({
       user: req.user?._id,
-      orderItems,
+      orderItems: normalizedOrderItems,
       shippingAddress,
       paymentMethod,
       shippingPrice,
@@ -78,13 +126,19 @@ orderRoute.get(
   "/:id",
   protect,
   asyncHandler(async (req: Request, res: Response) => {
-    const order = await Order.findById(req.params.id).populate(
-      "user",
-      "name email",
-    );
+    const order = await Order.findById(req.params.id);
 
     if (order) {
-      res.json(order);
+      const isOwner = order.user.toString() === req.user?._id.toString();
+      const isAdmin = Boolean(req.user?.isAdmin);
+
+      if (!isOwner && !isAdmin) {
+        res.status(403);
+        throw new Error("Not authorized to view this order");
+      }
+
+      const populatedOrder = await order.populate("user", "name email");
+      res.json(populatedOrder);
     } else {
       res.status(404);
       throw new Error("Order not found");
@@ -98,10 +152,19 @@ orderRoute.get(
 orderRoute.put(
   "/:id/pay",
   protect,
+  validateBody(payOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+      const isOwner = order.user.toString() === req.user?._id.toString();
+      const isAdmin = Boolean(req.user?.isAdmin);
+
+      if (!isOwner && !isAdmin) {
+        res.status(403);
+        throw new Error("Not authorized to pay this order");
+      }
+
       order.isPaid = true;
       order.paidAt = new Date();
       order.paymentResult = {

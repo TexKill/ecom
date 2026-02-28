@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   Search,
   ShoppingCart,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 
 export default function Header() {
   const router = useRouter();
@@ -31,6 +32,11 @@ export default function Header() {
   const { user, logout } = useAuthStore();
   const totalQty = useCartStore((s) => s.totalQty());
   const clearCart = useCartStore((s) => s.clearCart);
+  const totalFavorites = useFavoritesStore((s) => s.totalFavorites());
+  const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
+  const loadFavoritesFromServer = useFavoritesStore(
+    (s) => s.loadFavoritesFromServer,
+  );
 
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,10 +47,17 @@ export default function Header() {
   };
 
   const handleLogout = () => {
-    clearCart();
+    clearCart(user?.token);
+    clearFavorites(user?.token);
     logout();
     router.push("/login");
   };
+
+  useEffect(() => {
+    if (user?.token) {
+      loadFavoritesFromServer(user.token);
+    }
+  }, [user?.token, loadFavoritesFromServer]);
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white">
@@ -96,8 +109,13 @@ export default function Header() {
 
           {/* Icons */}
           <div className="flex items-center gap-4">
-            <Link href="/wishlist" className="relative hidden md:block">
+            <Link href="/favorites" className="relative hidden md:block">
               <Heart size={22} />
+              {isHydrated && totalFavorites > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {totalFavorites}
+                </span>
+              )}
             </Link>
 
             <Link href="/cart" className="relative">
@@ -153,6 +171,9 @@ export default function Header() {
             </Link>
             <Link href="/orders" onClick={() => setMenuOpen(false)}>
               Orders
+            </Link>
+            <Link href="/favorites" onClick={() => setMenuOpen(false)}>
+              Favorites
             </Link>
             <form
               onSubmit={handleSearch}

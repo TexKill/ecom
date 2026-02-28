@@ -39,10 +39,13 @@ interface CartState {
   saveShippingAddress: (address: ShippingAddress) => void;
 }
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
+
 const syncCartToServer = async (items: CartItem[], token: string) => {
   try {
     await axios.post(
-      "http://localhost:9000/api/cart",
+      `${API_BASE_URL}/api/cart`,
       {
         items: items.map((i) => ({
           productId: i._id,
@@ -104,7 +107,7 @@ export const useCartStore = create<CartState>()(
         set({ items: [] });
         if (token) {
           try {
-            await axios.delete("http://localhost:9000/api/cart", {
+            await axios.delete(`${API_BASE_URL}/api/cart`, {
               headers: { Authorization: `Bearer ${token}` },
             });
           } catch (err) {
@@ -115,7 +118,7 @@ export const useCartStore = create<CartState>()(
 
       loadCartFromServer: async (token) => {
         try {
-          const { data } = await axios.get("http://localhost:9000/api/cart", {
+          const { data } = await axios.get(`${API_BASE_URL}/api/cart`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           const items: CartItem[] = data.map((i: ServerCartItem) => ({

@@ -9,6 +9,14 @@ export interface ICartItem {
   qty: number;
 }
 
+export interface IFavoriteItem {
+  productId: Types.ObjectId;
+  name: string;
+  image: string;
+  price: number;
+  countInStock: number;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   name: string;
@@ -16,7 +24,8 @@ export interface IUser extends Document {
   password: string;
   isAdmin: boolean;
   createdAt: Date;
-  cart: ICartItem[]; // ADD THIS
+  cart: ICartItem[];
+  favorites: IFavoriteItem[];
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 

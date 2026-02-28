@@ -3,6 +3,12 @@ import asyncHandler from "express-async-handler";
 import { User } from "../models/User";
 import generateToken from "../utils/tokenGenerate";
 import { protect } from "../middleware/Auth";
+import { validateBody } from "../middleware/Validate";
+import {
+  loginSchema,
+  registerSchema,
+  updateProfileSchema,
+} from "../validation/user";
 
 const userRoute = express.Router();
 
@@ -10,6 +16,7 @@ const userRoute = express.Router();
 // @route POST /api/users/login
 userRoute.post(
   "/login",
+  validateBody(loginSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -34,6 +41,7 @@ userRoute.post(
 // @route POST /api/users/register
 userRoute.post(
   "/register",
+  validateBody(registerSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
     const userExists = await User.findOne({ email });
@@ -51,6 +59,7 @@ userRoute.post(
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        token: generateToken(user._id),
         createdAt: user.createdAt,
       });
     } else {
@@ -88,6 +97,7 @@ userRoute.get(
 userRoute.put(
   "/profile",
   protect,
+  validateBody(updateProfileSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const user = await User.findById(req.user?._id);
 

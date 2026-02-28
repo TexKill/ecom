@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
+import { useFavoritesStore } from "@/store/favoritesStore";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,6 +14,9 @@ export default function RegisterPage() {
   const redirect = searchParams.get("redirect") || "/";
 
   const setUser = useAuthStore((s) => s.setUser);
+  const loadFavoritesFromServer = useFavoritesStore(
+    (s) => s.loadFavoritesFromServer,
+  );
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -32,16 +37,14 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:9000/api/users/register",
-        {
-          name,
-          email,
-          password,
-        },
-      );
+      const { data } = await axiosInstance.post("/api/users/register", {
+        name,
+        email,
+        password,
+      });
 
       setUser(data);
+      await loadFavoritesFromServer(data.token);
       router.replace(redirect);
     } catch (err) {
       if (axios.isAxiosError(err)) {
