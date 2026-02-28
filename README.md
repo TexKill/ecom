@@ -16,7 +16,7 @@ A full-stack e-commerce application built with Node.js, Express, MongoDB, and Ne
 - **Next.js 15** (App Router, Turbopack)
 - **TypeScript**
 - **Tailwind CSS** — styling
-- **Zustand** — global state management (cart, user)
+- **Zustand** — global state management (cart and user)
 - **React Query** — server state & caching
 - **Lucide React** — icons
 
@@ -245,3 +245,4 @@ Credentials are defined in `api/src/data/Users.ts`.
 ## 📄 License
 
 This project is for educational purposes only.
+
