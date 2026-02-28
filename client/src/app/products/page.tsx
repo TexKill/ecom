@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { getProducts } from "@/lib/api";
 import { IProduct } from "@/types";
 import ProductCard from "@/components/products/ProductCard";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function ProductsPage() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
 
@@ -22,25 +24,25 @@ export default function ProductsPage() {
         const data = await getProducts(keyword);
         setProducts(data.products);
       } catch {
-        setError("Failed to load products");
+        setError(t.products.loadFail);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [keyword]);
+  }, [keyword, t.products.loadFail]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">
-        {keyword ? `Search: ${keyword}` : "All Products"}
+        {keyword ? `${t.products.searchTitle}: ${keyword}` : t.products.allProducts}
       </h1>
 
-      {loading && <p className="text-gray-500">Loading products...</p>}
+      {loading && <p className="text-gray-500">{t.products.loading}</p>}
       {!loading && error && <p className="text-red-500">{error}</p>}
       {!loading && !error && products.length === 0 && (
-        <p className="text-gray-500">No products found.</p>
+        <p className="text-gray-500">{t.products.noProducts}</p>
       )}
 
       {!loading && !error && products.length > 0 && (

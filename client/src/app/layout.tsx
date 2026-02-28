@@ -8,7 +8,7 @@ import Footer from "@/components/layout/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TexKillDev — Online Shopping",
+  title: "TexKillDev - Online Shopping",
   description: "Best deals on electronics",
 };
 

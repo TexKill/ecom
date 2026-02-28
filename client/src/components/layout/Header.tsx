@@ -15,18 +15,19 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function Header() {
   const router = useRouter();
+  const { lang, setLang, t } = useLanguage();
 
-  // Hydration-safe Zustand reading (bypasses the useEffect issue entirely)
   const isHydrated = useSyncExternalStore(
     (subscribe) => {
       window.addEventListener("storage", subscribe);
       return () => window.removeEventListener("storage", subscribe);
     },
     () => true,
-    () => false, // Server always returns false
+    () => false,
   );
 
   const { user, logout } = useAuthStore();
@@ -63,41 +64,32 @@ export default function Header() {
     <header className="w-full sticky top-0 z-50 bg-white">
       <div className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
-          {/* Logo */}
           <Link href="/" className="text-2xl font-bold tracking-tight shrink-0">
             TexKillDev
           </Link>
 
-          {/* Nav links — desktop */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
             <Link
               href="/"
               className="relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-red-500 after:transition-all after:duration-300 hover:after:w-full"
             >
-              Home
+              {t.header.home}
             </Link>
             <Link
               href="/products"
               className="relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-red-500 after:transition-all after:duration-300 hover:after:w-full"
             >
-              Products
-            </Link>
-            <Link
-              href="/orders"
-              className="relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-red-500 after:transition-all after:duration-300 hover:after:w-full"
-            >
-              Orders
+              {t.header.products}
             </Link>
           </nav>
 
-          {/* Search */}
           <form
             onSubmit={handleSearch}
             className="hidden md:flex items-center bg-gray-100 rounded px-3 py-2 gap-2 border-2 border-transparent transition-all duration-300 focus-within:border-red-500 focus-within:bg-white"
           >
             <input
               type="text"
-              placeholder="What are you looking for?"
+              placeholder={t.header.searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-transparent outline-none text-sm w-full"
@@ -107,8 +99,24 @@ export default function Header() {
             </button>
           </form>
 
-          {/* Icons */}
           <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center rounded border border-gray-200 text-xs">
+              <button
+                type="button"
+                onClick={() => setLang("uk")}
+                className={`px-2 py-1 ${lang === "uk" ? "bg-black text-white" : "text-gray-600"}`}
+              >
+                UA
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`px-2 py-1 ${lang === "en" ? "bg-black text-white" : "text-gray-600"}`}
+              >
+                EN
+              </button>
+            </div>
+
             <Link href="/favorites" className="relative hidden md:block">
               <Heart size={22} />
               {isHydrated && totalFavorites > 0 && (
@@ -146,34 +154,29 @@ export default function Header() {
                 </Link>
               )
             ) : (
-              // Changed to w-5.5 h-5.5 as suggested by Tailwind
-              <div className="w-5.5 h-5.5"></div>
+              <div className="w-5 h-5" />
             )}
 
-            {/* Burger — mobile */}
             <button
               className="md:hidden"
               onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={t.header.toggleMenu}
             >
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden px-4 pb-4 flex flex-col gap-3 text-sm font-medium border-t pt-3 bg-white">
             <Link href="/" onClick={() => setMenuOpen(false)}>
-              Home
+              {t.header.home}
             </Link>
             <Link href="/products" onClick={() => setMenuOpen(false)}>
-              Products
-            </Link>
-            <Link href="/orders" onClick={() => setMenuOpen(false)}>
-              Orders
+              {t.header.products}
             </Link>
             <Link href="/favorites" onClick={() => setMenuOpen(false)}>
-              Favorites
+              {t.header.favorites}
             </Link>
             <form
               onSubmit={handleSearch}
@@ -181,7 +184,7 @@ export default function Header() {
             >
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={t.header.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-transparent outline-none text-sm w-full"
@@ -190,6 +193,22 @@ export default function Header() {
                 <Search size={16} />
               </button>
             </form>
+            <div className="flex items-center rounded border border-gray-200 text-xs w-fit">
+              <button
+                type="button"
+                onClick={() => setLang("uk")}
+                className={`px-2 py-1 ${lang === "uk" ? "bg-black text-white" : "text-gray-600"}`}
+              >
+                UA
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`px-2 py-1 ${lang === "en" ? "bg-black text-white" : "text-gray-600"}`}
+              >
+                EN
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -8,12 +8,14 @@ import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { IProduct } from "@/types";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface ProductCardProps {
   product: IProduct;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { t } = useLanguage();
   const addItem = useCartStore((s) => s.addItem);
   const user = useAuthStore((s) => s.user);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
@@ -41,9 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   );
 
   return (
-    <div
-      className="group relative overflow-hidden rounded-lg border border-gray-100 bg-white transition-shadow duration-300 hover:shadow-lg"
-    >
+    <div className="group relative overflow-hidden rounded-lg border border-gray-100 bg-white transition-shadow duration-300 hover:shadow-lg">
       <Link href={`/products/${product._id}`}>
         <div className="relative h-52 overflow-hidden bg-gray-50">
           <Image
@@ -56,7 +56,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {product.countInStock === 0 && (
             <span className="absolute left-2 top-2 rounded bg-red-500 px-2 py-1 text-xs text-white">
-              Out of Stock
+              {t.product.outOfStock}
             </span>
           )}
         </div>
@@ -66,10 +66,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         onClick={async () => {
           const wasFavorite = isFavorite;
           await toggleFavorite(product, user?.token);
-          showToast(wasFavorite ? "Removed from favorites" : "Added to favorites");
+          showToast(
+            wasFavorite ? t.product.removedFromFavorites : t.product.addedToFavorites,
+          );
         }}
         className="absolute right-3 top-3 rounded-full bg-white p-1.5 opacity-0 shadow transition-opacity duration-300 group-hover:opacity-100"
-        aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        aria-label={isFavorite ? t.product.removedFromFavorites : t.product.addedToFavorites}
       >
         <Heart
           size={16}
@@ -85,18 +87,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-red-500">
-            ₴{product.price.toFixed(2)}
-          </span>
+          <span className="font-semibold text-red-500">₴{product.price.toFixed(2)}</span>
         </div>
 
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <span
               key={i}
-              className={
-                i < Math.round(product.rating) ? "text-yellow-400" : "text-gray-300"
-              }
+              className={i < Math.round(product.rating) ? "text-yellow-400" : "text-gray-300"}
             >
               ★
             </span>
@@ -110,7 +108,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           className="mt-1 flex items-center justify-center gap-2 rounded bg-black py-2 text-sm text-white transition-colors duration-300 hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           <ShoppingCart size={15} />
-          Add to Cart
+          {t.product.addToCart}
         </button>
 
         {toast && (

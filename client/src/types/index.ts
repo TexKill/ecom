@@ -8,6 +8,7 @@ export interface IUser {
 }
 
 export interface IReview {
+  _id?: string;
   name: string;
   rating: number;
   comment: string;
@@ -22,6 +23,8 @@ export interface IProduct {
   brand: string;
   category: string;
   description: string;
+  descriptionUk?: string;
+  descriptionEn?: string;
   reviews: IReview[];
   rating: number;
   numReviews: number;

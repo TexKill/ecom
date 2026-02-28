@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { getMyOrders } from "@/lib/api";
 import { IOrder } from "@/types";
 import { useAuthStore } from "@/store/authStore";
+import Breadcrumbs from "@/components/layout/Breadcrumbs";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function OrdersPage() {
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
@@ -30,25 +33,33 @@ export default function OrdersPage() {
         const data = await getMyOrders();
         setOrders(data);
       } catch {
-        setError("Failed to load your orders");
+        setError(t.orders.loadFail);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, [user, hasHydrated, router]);
+  }, [user, hasHydrated, router, t.orders.loadFail]);
 
   if (!hasHydrated || !user) return null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">My Orders</h1>
+      <Breadcrumbs
+        items={[
+          { label: t.header.home, href: "/" },
+          { label: t.account.myAccount, href: "/account" },
+          { label: t.orders.title },
+        ]}
+      />
 
-      {loading && <p className="text-gray-500">Loading orders...</p>}
+      <h1 className="text-2xl font-bold mb-6">{t.orders.title}</h1>
+
+      {loading && <p className="text-gray-500">{t.orders.loading}</p>}
       {!loading && error && <p className="text-red-500">{error}</p>}
       {!loading && !error && orders.length === 0 && (
-        <p className="text-gray-500">You have no orders yet.</p>
+        <p className="text-gray-500">{t.orders.empty}</p>
       )}
 
       {!loading && !error && orders.length > 0 && (
@@ -59,19 +70,19 @@ export default function OrdersPage() {
               className="rounded-lg border border-gray-200 p-4 flex items-center justify-between"
             >
               <div>
-                <p className="font-medium">Order #{order._id.slice(-8)}</p>
+                <p className="font-medium">{t.orders.order} #{order._id.slice(-8)}</p>
                 <p className="text-sm text-gray-500">
                   {order.createdAt
-                    ? new Date(order.createdAt).toLocaleString()
-                    : "Date unavailable"}
+                    ? new Date(order.createdAt).toLocaleString(
+                        lang === "uk" ? "uk-UA" : "en-US",
+                      )
+                    : t.orders.dateUnavailable}
                 </p>
               </div>
               <div className="text-right">
                 <p className="font-semibold">₴{order.totalPrice.toFixed(2)}</p>
-                <p
-                  className={`text-sm ${order.isPaid ? "text-green-600" : "text-amber-600"}`}
-                >
-                  {order.isPaid ? "Paid" : "Pending"}
+                <p className={`text-sm ${order.isPaid ? "text-green-600" : "text-amber-600"}`}>
+                  {order.isPaid ? t.orders.paid : t.orders.pending}
                 </p>
               </div>
             </div>

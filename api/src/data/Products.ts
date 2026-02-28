@@ -4,6 +4,10 @@ const products = [
     image: "/images/airpods.jpg",
     description:
       "Bluetooth technology lets you connect it with compatible devices wirelessly.",
+    descriptionUk:
+      "Технологія Bluetooth дозволяє бездротово підключати навушники до сумісних пристроїв.",
+    descriptionEn:
+      "Bluetooth technology lets you connect it with compatible devices wirelessly.",
     brand: "Apple",
     category: "Electronics",
     price: 89.99,
@@ -16,6 +20,10 @@ const products = [
     image: "/images/phone.jpg",
     description:
       "Introducing the iPhone 13 Pro. A transformative triple-camera system.",
+    descriptionUk:
+      "Представляємо iPhone 13 Pro. Інноваційна система з потрійною камерою.",
+    descriptionEn:
+      "Introducing the iPhone 13 Pro. A transformative triple-camera system.",
     brand: "Apple",
     category: "Electronics",
     price: 599.99,
@@ -27,7 +35,11 @@ const products = [
     name: "Cannon EOS 80D DSLR Camera",
     image: "/images/camera.jpg",
     description:
-      "Characterized by versatile imaging specs, the Canon EOS 80D further clarifies its ",
+      "Characterized by versatile imaging specs, the Canon EOS 80D further clarifies its potential.",
+    descriptionUk:
+      "Canon EOS 80D має універсальні характеристики зйомки, що розкривають увесь потенціал камери.",
+    descriptionEn:
+      "Characterized by versatile imaging specs, the Canon EOS 80D further clarifies its potential.",
     brand: "Cannon",
     category: "Electronics",
     price: 929.99,

@@ -43,7 +43,8 @@ userRoute.post(
   "/register",
   validateBody(registerSchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
+    const name = `${firstName} ${lastName}`.trim();
     const userExists = await User.findOne({ email });
 
     if (userExists) {

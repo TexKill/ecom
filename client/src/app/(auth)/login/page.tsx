@@ -4,12 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
 import axiosInstance from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
@@ -21,6 +24,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,9 +45,9 @@ export default function LoginPage() {
       router.replace(redirect);
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Invalid email or password");
+        setError(err.response?.data?.message || t.auth.invalidCredentials);
       } else {
-        setError("An unexpected error occurred");
+        setError(t.auth.unexpectedError);
       }
     } finally {
       setIsLoading(false);
@@ -51,72 +55,99 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 mt-2">
-            Log in to your account to continue
+    <div className="min-h-[80vh] bg-gray-50 px-4">
+      <div className="mx-auto flex min-h-[80vh] max-w-md items-center justify-center">
+        <div className="w-full rounded-xl border border-gray-100 bg-white p-8 shadow-sm transition-all duration-300">
+          <div className="mb-6 grid grid-cols-2 rounded-lg bg-gray-100 p-1 text-sm">
+            <Link
+              href={redirect ? `/login?redirect=${redirect}` : "/login"}
+              className="rounded-md bg-white px-3 py-2 text-center font-medium text-black shadow-sm transition-all duration-300"
+            >
+              {t.auth.login}
+            </Link>
+            <Link
+              href={redirect ? `/register?redirect=${redirect}` : "/register"}
+              className="rounded-md px-3 py-2 text-center font-medium text-gray-600 transition-all duration-300 hover:bg-white/70 hover:text-black"
+            >
+              {t.auth.register}
+            </Link>
+          </div>
+
+          <div className="mb-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-900">{t.auth.welcomeBack}</h1>
+            <p className="mt-2 text-gray-500">{t.auth.loginSubtitle}</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 rounded-lg bg-red-50 p-3 text-center text-sm text-red-500">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                {t.auth.email}
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none transition-all duration-300 focus:border-red-500 focus:ring-2 focus:ring-red-500"
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                {t.auth.password}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-11 outline-none transition-all duration-300 focus:border-red-500 focus:ring-2 focus:ring-red-500"
+                  placeholder="********"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                  aria-label={
+                    showPassword ? t.auth.hidePassword : t.auth.showPassword
+                  }
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center rounded-lg bg-black py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-500 disabled:bg-gray-400"
+            >
+              {isLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                t.auth.signIn
+              )}
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-gray-600">
+            {t.auth.noAccount}{" "}
+            <Link
+              href={redirect ? `/register?redirect=${redirect}` : "/register"}
+              className="font-medium text-red-500 hover:underline"
+            >
+              {t.auth.registerHere}
+            </Link>
           </p>
         </div>
-
-        {error && (
-          <div className="bg-red-50 text-red-500 p-3 rounded-lg text-sm mb-6 text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-              placeholder="john@example.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-red-500 transition-colors disabled:bg-gray-400 flex justify-center items-center"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-600 mt-8">
-          Don&apos;t have an account?{" "}
-          <Link
-            href={redirect ? `/register?redirect=${redirect}` : "/register"}
-            className="text-red-500 hover:underline font-medium"
-          >
-            Register here
-          </Link>
-        </p>
       </div>
     </div>
   );

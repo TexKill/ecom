@@ -1,7 +1,7 @@
 import axiosInstance from "./axios";
 import { IProduct, IUser, IOrder } from "../types";
 
-// ─── Auth ─────────────────────────────────────────────────
+// â”€â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const loginUser = async (email: string, password: string) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
     "/api/users/login",
@@ -27,7 +27,7 @@ export const getUserProfile = async () => {
   return data;
 };
 
-// ─── Products ─────────────────────────────────────────────
+// â”€â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getProducts = async (keyword = "", pageNumber = 1) => {
   const { data } = await axiosInstance.get<{
     products: IProduct[];
@@ -43,7 +43,25 @@ export const getProductById = async (id: string) => {
   return data;
 };
 
-// ─── Orders ───────────────────────────────────────────────
+export const createProductReview = async (
+  productId: string,
+  payload: { rating: number; comment: string },
+) => {
+  const { data } = await axiosInstance.post<{ message: string }>(
+    `/api/products/${productId}/reviews`,
+    payload,
+  );
+  return data;
+};
+
+export const deleteProductReview = async (productId: string, reviewId: string) => {
+  const { data } = await axiosInstance.delete<{ message: string }>(
+    `/api/products/${productId}/reviews/${reviewId}`,
+  );
+  return data;
+};
+
+// â”€â”€â”€ Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const createOrder = async (orderData: Partial<IOrder>) => {
   const { data } = await axiosInstance.post<IOrder>("/api/orders", orderData);
   return data;
@@ -57,4 +75,67 @@ export const getMyOrders = async () => {
 export const getOrderById = async (id: string) => {
   const { data } = await axiosInstance.get<IOrder>(`/api/orders/${id}`);
   return data;
+};
+
+// Admin Orders
+export const getAllOrders = async () => {
+  const { data } = await axiosInstance.get<IOrder[]>("/api/orders");
+  return data;
+};
+
+export const markOrderDelivered = async (id: string) => {
+  const { data } = await axiosInstance.put<IOrder>(`/api/orders/${id}/deliver`);
+  return data;
+};
+
+export const deleteOrder = async (id: string) => {
+  const { data } = await axiosInstance.delete<{ message: string }>(
+    `/api/orders/${id}`,
+  );
+  return data;
+};
+
+// Admin Products
+export type ProductPayload = {
+  name: string;
+  price: number;
+  description: string;
+  descriptionUk?: string;
+  descriptionEn?: string;
+  image: string;
+  brand: string;
+  category: string;
+  countInStock: number;
+};
+
+export const createProduct = async (payload: ProductPayload) => {
+  const { data } = await axiosInstance.post<IProduct>("/api/products", payload);
+  return data;
+};
+
+export const updateProduct = async (id: string, payload: Partial<ProductPayload>) => {
+  const { data } = await axiosInstance.put<IProduct>(`/api/products/${id}`, payload);
+  return data;
+};
+
+export const deleteProduct = async (id: string) => {
+  const { data } = await axiosInstance.delete<{ message: string }>(
+    `/api/products/${id}`,
+  );
+  return data;
+};
+
+export const uploadProductImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const { data } = await axiosInstance.post<{ url: string }>(
+    "/api/upload",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    },
+  );
+
+  return data.url;
 };

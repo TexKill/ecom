@@ -5,8 +5,10 @@ import { getProducts } from "@/lib/api";
 import { IProduct } from "@/types";
 import ProductCard from "@/components/products/ProductCard";
 import { Search } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function HomePage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,14 +23,14 @@ export default function HomePage() {
         const data = await getProducts(keyword);
         setProducts(data.products);
       } catch {
-        setError("Failed to load products. Is the backend running?");
+        setError(t.home.loadFail);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [keyword]);
+  }, [keyword, t.home.loadFail]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,39 +39,32 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
-      {/* ── Hero section ── */}
       <section
         className="bg-black text-white rounded-2xl px-10 py-16 mb-12
         flex flex-col md:flex-row items-center justify-between gap-8"
       >
         <div className="flex flex-col gap-4 max-w-md">
-          <p className="text-green-400 text-sm tracking-widest uppercase">
-            {"Today's Best Deals"}
-          </p>
+          <p className="text-green-400 text-sm tracking-widest uppercase">{t.home.deals}</p>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            Shop the Latest <span className="text-red-500">Products</span>
+            {t.home.heroTitleStart} <span className="text-red-500">{t.home.heroTitleAccent}</span>
           </h1>
-          <p className="text-gray-400 text-sm">
-            Discover thousands of products at unbeatable prices.
-          </p>
+          <p className="text-gray-400 text-sm">{t.home.heroSubtitle}</p>
           <a
             href="#products"
             className="self-start bg-red-500 hover:bg-red-600
               text-white px-6 py-3 rounded
               transition-colors duration-300"
           >
-            Shop Now →
+            {t.home.shopNow} -&gt;
           </a>
         </div>
 
-        {/* Декоративна права частина */}
         <div className="hidden md:flex text-8xl">🛍️</div>
       </section>
 
-      {/* ── Пошук ── */}
       <section className="mb-8" id="products">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">All Products</h2>
+          <h2 className="text-2xl font-bold">{t.home.allProducts}</h2>
 
           <form
             onSubmit={handleSearch}
@@ -79,20 +74,17 @@ export default function HomePage() {
           >
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder={t.home.searchProducts}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="bg-transparent outline-none text-sm w-full"
             />
-            <button type="submit">
+            <button type="submit" aria-label={t.home.searchProducts}>
               <Search size={16} className="text-gray-500" />
             </button>
           </form>
         </div>
 
-        {/* ── Стани завантаження ── */}
-
-        {/* Loading: показуємо скелетон замість порожнього екрану */}
         {loading && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -100,12 +92,10 @@ export default function HomePage() {
                 key={i}
                 className="bg-gray-100 rounded-lg h-72 animate-pulse"
               />
-              // animate-pulse — Tailwind анімація "пульсування" для скелетонів
             ))}
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && (
           <div className="text-center py-20">
             <p className="text-red-500 text-lg">{error}</p>
@@ -113,29 +103,24 @@ export default function HomePage() {
               onClick={() => setKeyword("")}
               className="mt-4 text-sm text-gray-500 underline hover:text-red-500"
             >
-              Try again
+              {t.home.tryAgain}
             </button>
           </div>
         )}
 
-        {/* Порожній результат пошуку */}
         {!loading && !error && products.length === 0 && (
           <div className="text-center py-20 text-gray-400">
             <p className="text-5xl mb-4">🔍</p>
             <p>
-              {'No products found for "'}
-              {keyword}
-              {'"'}
+              {t.home.noProductsFound}
+              {keyword ? `: "${keyword}"` : ""}
             </p>
           </div>
         )}
 
-        {/* Сітка товарів */}
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              // key — обов'язковий атрибут при рендері списків
-              // React використовує його щоб відстежувати які елементи змінились
               <ProductCard key={product._id} product={product} />
             ))}
           </div>
