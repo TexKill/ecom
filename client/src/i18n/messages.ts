@@ -5,6 +5,7 @@ export type Messages = {
     home: string;
     products: string;
     favorites: string;
+    contact: string;
     searchPlaceholder: string;
     toggleMenu: string;
   };
@@ -226,6 +227,11 @@ export type Messages = {
   footer: {
     subscribe: string;
     enterEmail: string;
+    subscribeBtnAria: string;
+    subscribeSuccess: string;
+    subscribeExists: string;
+    subscribeInvalid: string;
+    subscribeError: string;
     support: string;
     supportAddress: string;
     account: string;
@@ -252,6 +258,7 @@ const en: Messages = {
     home: "Home",
     products: "Products",
     favorites: "Favorites",
+    contact: "Contact",
     searchPlaceholder: "What are you looking for?",
     toggleMenu: "Toggle menu",
   },
@@ -474,6 +481,11 @@ const en: Messages = {
   footer: {
     subscribe: "Subscribe to get updates on promotions and coupons.",
     enterEmail: "Enter your email",
+    subscribeBtnAria: "Subscribe",
+    subscribeSuccess: "Thanks! You are subscribed.",
+    subscribeExists: "This email is already subscribed.",
+    subscribeInvalid: "Please enter a valid email address.",
+    subscribeError: "Subscription failed. Please try again.",
     support: "Support",
     supportAddress: "15 Soniachna St, Apt. 24, Kyiv, 03150, Ukraine",
     account: "Account",
@@ -501,7 +513,8 @@ const uk: Messages = {
     home: "Головна",
     products: "Товари",
     favorites: "Обране",
-    searchPlaceholder: "Що ви шукаєте?",
+    contact: "Контакти",
+    searchPlaceholder: ")> 28 HC:0TB5?",
     toggleMenu: "Перемкнути меню",
   },
   auth: {
@@ -519,8 +532,8 @@ const uk: Messages = {
     lastName: "Прізвище",
     signIn: "Увійти",
     createAccountBtn: "Створити акаунт",
-    noAccount: "Ще не маєте акаунта?",
-    hasAccount: "Вже маєте акаунт?",
+    noAccount: ")5 =5 <0TB5 0:0C=B0?",
+    hasAccount: "65 <0TB5 0:0C=B?",
     registerHere: "Зареєструватися",
     logIn: "Увійти",
     invalidCredentials: "Невірний email або пароль",
@@ -675,7 +688,9 @@ const uk: Messages = {
     applyCoupon: "Застосувати купон",
     placeOrder: "Оформити замовлення",
     placing: "Оформлення...",
-    needEdit: "Потрібно змінити кошик?",
+    terms:
+      "Оформлюючи замовлення, ви погоджуєтеся з нашими умовами. Це оформлення повністю підключене до вашого backend API замовлень.",
+    needEdit: "\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u043e \u0437\u043c\u0456\u043d\u0438\u0442\u0438 \u043a\u043e\u0448\u0438\u043a?",
     goBackToCart: "Повернутись у кошик",
     couponEnter: "Спочатку введіть код купона.",
     couponNext: "Функцію купонів буде додано в наступній ітерації.",
@@ -728,21 +743,26 @@ const uk: Messages = {
   },
   footer: {
     ...en.footer,
-    subscribe: "Підпишіться, щоб отримувати акції та купони.",
-    enterEmail: "Введіть email",
-    support: "Підтримка",
-    supportAddress: "вул. Сонячна, 15, кв. 24, Київ, 03150, Україна",
-    account: "Акаунт",
-    myAccount: "Мій кабінет",
-    loginRegister: "Вхід / Реєстрація",
-    cart: "Кошик",
-    favorites: "Обране",
-    shop: "Магазин",
-    quickLink: "Швидкі посилання",
-    privacy: "Політика конфіденційності",
-    terms: "Умови користування",
-    faq: "Питання та відповіді",
-    contact: "Контакти",
+    subscribe: "\u041f\u0456\u0434\u043f\u0438\u0448\u0456\u0442\u044c\u0441\u044f, \u0449\u043e\u0431 \u043e\u0442\u0440\u0438\u043c\u0443\u0432\u0430\u0442\u0438 \u0430\u043a\u0446\u0456\u0457 \u0442\u0430 \u043a\u0443\u043f\u043e\u043d\u0438.",
+    enterEmail: "\u0412\u0432\u0435\u0434\u0456\u0442\u044c email",
+    subscribeBtnAria: "\u041f\u0456\u0434\u043f\u0438\u0441\u0430\u0442\u0438\u0441\u044f",
+    subscribeSuccess: "\u0414\u044f\u043a\u0443\u0454\u043c\u043e! \u0412\u0438 \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u0456.",
+    subscribeExists: "\u0426\u044f \u043f\u043e\u0448\u0442\u0430 \u0432\u0436\u0435 \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u0430.",
+    subscribeInvalid: "\u0412\u0432\u0435\u0434\u0456\u0442\u044c \u043a\u043e\u0440\u0435\u043a\u0442\u043d\u0443 email-\u0430\u0434\u0440\u0435\u0441\u0443.",
+    subscribeError: "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u043e\u0444\u043e\u0440\u043c\u0438\u0442\u0438 \u043f\u0456\u0434\u043f\u0438\u0441\u043a\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
+    support: "\u041f\u0456\u0434\u0442\u0440\u0438\u043c\u043a\u0430",
+    supportAddress: "\u0432\u0443\u043b. \u0421\u043e\u043d\u044f\u0447\u043d\u0430, 15, \u043a\u0432. 24, \u041a\u0438\u0457\u0432, 03150, \u0423\u043a\u0440\u0430\u0457\u043d\u0430",
+    account: "\u0410\u043a\u0430\u0443\u043d\u0442",
+    myAccount: "\u041c\u0456\u0439 \u043a\u0430\u0431\u0456\u043d\u0435\u0442",
+    loginRegister: "\u0412\u0445\u0456\u0434 / \u0420\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044f",
+    cart: "\u041a\u043e\u0448\u0438\u043a",
+    favorites: "\u041e\u0431\u0440\u0430\u043d\u0435",
+    shop: "\u041c\u0430\u0433\u0430\u0437\u0438\u043d",
+    quickLink: "\u0428\u0432\u0438\u0434\u043a\u0456 \u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f",
+    privacy: "\u041f\u043e\u043b\u0456\u0442\u0438\u043a\u0430 \u043a\u043e\u043d\u0444\u0456\u0434\u0435\u043d\u0446\u0456\u0439\u043d\u043e\u0441\u0442\u0456",
+    terms: "\u0423\u043c\u043e\u0432\u0438 \u043a\u043e\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u043d\u043d\u044f",
+    faq: "\u041f\u0438\u0442\u0430\u043d\u043d\u044f \u0442\u0430 \u0432\u0456\u0434\u043f\u043e\u0432\u0456\u0434\u0456",
+    contact: "\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u0438",
   },
   steps: {
     signIn: "Вхід",
@@ -752,3 +772,8 @@ const uk: Messages = {
 };
 
 export const messages: Record<Lang, Messages> = { en, uk };
+
+
+
+
+

@@ -7,6 +7,18 @@ import products from "./data/Products";
 
 const router = express.Router();
 
+router.use((req: Request, res: Response, next) => {
+  const seedKey = process.env.SEED_KEY;
+  const providedKey = req.header("x-seed-key");
+
+  if (!seedKey || providedKey !== seedKey) {
+    res.status(403);
+    throw new Error("Seeder access denied");
+  }
+
+  next();
+});
+
 // @route POST /api/seed/users
 router.post(
   "/users",

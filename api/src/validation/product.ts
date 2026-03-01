@@ -1,14 +1,13 @@
 import { z } from "zod";
-
-const objectIdLike = z.string().trim().min(1);
+import { objectIdSchema } from "./common";
 
 export const productIdParamSchema = z.object({
-  id: objectIdLike,
+  id: objectIdSchema,
 });
 
 export const productReviewParamsSchema = z.object({
-  id: objectIdLike,
-  reviewId: objectIdLike,
+  id: objectIdSchema,
+  reviewId: objectIdSchema,
 });
 
 export const productListQuerySchema = z.object({

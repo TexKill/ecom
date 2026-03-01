@@ -15,16 +15,6 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 const fetchProduct = async (id: string): Promise<IProduct> => getProductById(id);
-const decodeMojibake = (value: string) => {
-  if (!/[ÐÑÃ]/.test(value)) return value;
-  try {
-    const bytes = Uint8Array.from([...value].map((ch) => ch.charCodeAt(0) & 0xff));
-    return new TextDecoder("utf-8").decode(bytes);
-  } catch {
-    return value;
-  }
-};
-
 export default function ProductPage() {
   const { t, lang } = useLanguage();
   const params = useParams();
@@ -75,9 +65,9 @@ export default function ProductPage() {
   const localizedDescription = useMemo(() => {
     if (!product) return "";
     if (lang === "uk") {
-      return decodeMojibake((product.descriptionUk || product.description || "").trim());
+      return (product.descriptionUk || product.description || "").trim();
     }
-    return decodeMojibake((product.descriptionEn || product.description || "").trim());
+    return (product.descriptionEn || product.description || "").trim();
   }, [product, lang]);
 
   if (isLoading) {
@@ -353,5 +343,6 @@ export default function ProductPage() {
     </div>
   );
 }
+
 
 

@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { objectIdSchema } from "./common";
 
 export const createOrderSchema = z.object({
   orderItems: z
     .array(
       z.object({
-        product: z.string().trim().min(1),
+        product: objectIdSchema,
         qty: z.number().int().positive(),
       }),
     )
@@ -12,6 +13,7 @@ export const createOrderSchema = z.object({
   shippingAddress: z.object({
     address: z.string().trim().min(2),
     city: z.string().trim().min(2),
+    phoneNumber: z.string().trim().min(5).max(32),
     postalCode: z.string().trim().min(2),
     country: z.string().trim().min(2),
   }),
@@ -23,4 +25,8 @@ export const payOrderSchema = z.object({
   status: z.string().trim().min(1),
   update_time: z.string().trim().min(1),
   email_address: z.string().trim().email(),
+});
+
+export const orderIdParamSchema = z.object({
+  id: objectIdSchema,
 });

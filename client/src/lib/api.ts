@@ -11,13 +11,14 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const registerUser = async (
-  name: string,
+  firstName: string,
+  lastName: string,
   email: string,
   password: string,
 ) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
     "/api/users/register",
-    { name, email, password },
+    { firstName, lastName, email, password },
   );
   return data;
 };

@@ -80,6 +80,12 @@ export default function AdminPage() {
     load();
   }, [hasHydrated, user, router, t.admin.loadFail]);
 
+  useEffect(() => {
+    if (!error) return;
+    const timer = window.setTimeout(() => setError(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [error]);
+
   if (!hasHydrated || !user || !user.isAdmin) return null;
 
   const resetForm = () => {

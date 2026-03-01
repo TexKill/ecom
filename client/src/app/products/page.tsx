@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getProducts } from "@/lib/api";
 import { IProduct } from "@/types";
 import ProductCard from "@/components/products/ProductCard";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
-export default function ProductsPage() {
+function ProductsContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
@@ -53,5 +53,13 @@ export default function ProductsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ProductsContent />
+    </Suspense>
   );
 }

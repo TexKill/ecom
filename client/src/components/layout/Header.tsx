@@ -81,6 +81,12 @@ export default function Header() {
             >
               {t.header.products}
             </Link>
+            <Link
+              href="/contact"
+              className="relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-red-500 after:transition-all after:duration-300 hover:after:w-full"
+            >
+              {t.header.contact}
+            </Link>
           </nav>
 
           <form
@@ -177,6 +183,9 @@ export default function Header() {
             </Link>
             <Link href="/favorites" onClick={() => setMenuOpen(false)}>
               {t.header.favorites}
+            </Link>
+            <Link href="/contact" onClick={() => setMenuOpen(false)}>
+              {t.header.contact}
             </Link>
             <form
               onSubmit={handleSearch}

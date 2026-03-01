@@ -6,6 +6,7 @@ import axios from "axios";
 export interface ShippingAddress {
   address: string;
   city: string;
+  phoneNumber: string;
   postalCode: string;
   country: string;
 }
@@ -67,7 +68,13 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      shippingAddress: { address: "", city: "", postalCode: "", country: "" },
+      shippingAddress: {
+        address: "",
+        city: "",
+        phoneNumber: "",
+        postalCode: "",
+        country: "",
+      },
 
       addItem: (product, token) => {
         const exists = get().items.find((i) => i._id === product._id);

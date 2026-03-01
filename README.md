@@ -1,6 +1,6 @@
 # 🛒 Ecom — Full-Stack E-Commerce App
 
-A full-stack e-commerce application built with Node.js, Express, MongoDB, and Next.js 15.
+A full-stack e-commerce application built with Node.js, Express, MongoDB, and Next.js 16.
 
 ## 🚀 Tech Stack
 
@@ -13,7 +13,7 @@ A full-stack e-commerce application built with Node.js, Express, MongoDB, and Ne
 - **Cloudinary** + **Multer** — image uploads
 
 ### Frontend (`/client`)
-- **Next.js 15** (App Router, Turbopack)
+- **Next.js 16** (App Router, Turbopack)
 - **TypeScript**
 - **Tailwind CSS** — styling
 - **Zustand** — global state management (cart and user)
@@ -88,6 +88,11 @@ cp .env.example .env   # fill in your values
 npm run dev
 ```
 
+Required backend env keys now include:
+- `CORS_ORIGIN` (comma-separated origins)
+- `ENABLE_SEED_ROUTES` (`true`/`false`)
+- `SEED_KEY` (required when seeding is enabled)
+
 ### Frontend
 
 ```bash
@@ -112,7 +117,9 @@ npm start       # Runs compiled dist/index.js
 
 ## 🌱 Database Seeding
 
-> ⚠️ Seed users **before** products.
+> ⚠️ Seed routes are disabled by default.  
+> Set `ENABLE_SEED_ROUTES=true` and send `x-seed-key: <SEED_KEY>`.  
+> Seed users **before** products.
 
 ```bash
 POST http://localhost:9000/api/seed/users
@@ -145,7 +152,8 @@ Authorization: Bearer <your_token>
 **Register / Login request body:**
 ```json
 {
-  "name": "John Doe",
+  "firstName": "John",
+  "lastName": "Doe",
   "email": "john@example.com",
   "password": "123456"
 }
@@ -181,7 +189,7 @@ Authorization: Bearer <your_token>
 | Method | Endpoint | Description | Protected |
 |--------|----------|-------------|-----------|
 | `POST` | `/` | Create a new order | ✅ JWT |
-| `GET` | `/my` | Get logged-in user's orders | ✅ JWT |
+| `GET` | `/myorders` | Get logged-in user's orders | ✅ JWT |
 | `GET` | `/:id` | Get order by ID | ✅ JWT |
 
 ---
@@ -221,19 +229,19 @@ Credentials are defined in `api/src/data/Users.ts`.
 - [x] Product CRUD routes
 - [x] Order management routes
 - [x] Image upload with Cloudinary
-- [ ] Admin routes & middleware
-- [ ] Input validation (Zod)
+- [x] Admin routes & middleware
+- [x] Input validation (Zod)
 - [ ] Pagination & search
 
 ### Frontend
-- [x] Next.js 15 project setup
+- [x] Next.js 16 project setup
 - [x] Product listing page
 - [x] Product detail page
 - [x] Shopping cart (Zustand)
-- [ ] Authentication flow
-- [ ] Checkout flow
-- [ ] Order history page
-- [ ] Admin dashboard
+- [x] Authentication flow
+- [x] Checkout flow
+- [x] Order history page
+- [x] Admin dashboard
 
 ### DevOps
 - [ ] Docker + docker-compose

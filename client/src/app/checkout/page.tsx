@@ -10,29 +10,53 @@ import { createOrder } from "@/lib/api";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
+type RequiredField =
+  | "firstName"
+  | "lastName"
+  | "streetAddress"
+  | "townCity"
+  | "phoneNumber"
+  | "emailAddress"
+  | "postalCode"
+  | "country";
+
 export default function CheckoutPage() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const { items, shippingAddress, saveShippingAddress, clearCart } = useCartStore();
 
+  const savedAddressParts = shippingAddress.address
+    ? shippingAddress.address.split(",").map((part) => part.trim())
+    : [];
+  const savedStreetAddress = savedAddressParts[0] || "";
+  const savedApartment = savedAddressParts.slice(1).join(", ");
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [streetAddress, setStreetAddress] = useState(shippingAddress.address || "");
-  const [apartment, setApartment] = useState("");
+  const [streetAddress, setStreetAddress] = useState(savedStreetAddress);
+  const [apartment, setApartment] = useState(savedApartment);
   const [townCity, setTownCity] = useState(shippingAddress.city || "");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(shippingAddress.phoneNumber || "");
   const [emailAddress, setEmailAddress] = useState(user?.email || "");
-  const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || "00000");
-  const [country, setCountry] = useState(
-    shippingAddress.country || (lang === "uk" ? "Україна" : "Ukraine"),
-  );
+  const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || "");
+  const [country, setCountry] = useState(shippingAddress.country || "");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [couponCode, setCouponCode] = useState("");
   const [saveInfo, setSaveInfo] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<RequiredField, boolean>>({
+    firstName: false,
+    lastName: false,
+    streetAddress: false,
+    townCity: false,
+    phoneNumber: false,
+    emailAddress: false,
+    postalCode: false,
+    country: false,
+  });
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -44,13 +68,22 @@ export default function CheckoutPage() {
       router.replace("/cart");
       return;
     }
-    if (!firstName && user.name) {
-      setFirstName(user.name.split(" ")[0] || user.name);
+    if (user.name) {
+      const nameParts = user.name.trim().split(/\s+/).filter(Boolean);
+      const derivedFirstName = nameParts[0] || "";
+      const derivedLastName = nameParts.slice(1).join(" ");
+
+      if (!firstName && derivedFirstName) {
+        setFirstName(derivedFirstName);
+      }
+      if (!lastName && derivedLastName) {
+        setLastName(derivedLastName);
+      }
     }
     if (!emailAddress && user.email) {
       setEmailAddress(user.email);
     }
-  }, [hasHydrated, user, items.length, router, firstName, emailAddress]);
+  }, [hasHydrated, user, items.length, router, firstName, lastName, emailAddress]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -69,7 +102,36 @@ export default function CheckoutPage() {
     setMessage(t.checkout.couponNext);
   };
 
+  const getInputClass = (field: RequiredField) =>
+    `w-full rounded border px-4 py-3 outline-none ${
+      fieldErrors[field]
+        ? "border-red-500 bg-red-50 focus:border-red-500"
+        : "border-gray-200 bg-gray-50 focus:border-red-400"
+    }`;
+
+  const validateRequiredFields = () => {
+    const nextErrors: Record<RequiredField, boolean> = {
+      firstName: !firstName.trim(),
+      lastName: !lastName.trim(),
+      streetAddress: !streetAddress.trim(),
+      townCity: !townCity.trim(),
+      phoneNumber: !phoneNumber.trim(),
+      emailAddress:
+        !emailAddress.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim()),
+      postalCode: !postalCode.trim(),
+      country: !country.trim(),
+    };
+
+    setFieldErrors(nextErrors);
+    return !Object.values(nextErrors).some(Boolean);
+  };
+
   const placeOrder = async () => {
+    if (!validateRequiredFields()) {
+      setMessage(t.checkout.orderFail);
+      return;
+    }
+
     try {
       setSubmitting(true);
       setMessage("");
@@ -82,6 +144,7 @@ export default function CheckoutPage() {
         saveShippingAddress({
           address,
           city: townCity.trim(),
+          phoneNumber: phoneNumber.trim(),
           postalCode: postalCode.trim(),
           country: country.trim(),
         });
@@ -98,6 +161,7 @@ export default function CheckoutPage() {
         shippingAddress: {
           address,
           city: townCity.trim(),
+          phoneNumber: phoneNumber.trim(),
           postalCode: postalCode.trim(),
           country: country.trim(),
         },
@@ -143,9 +207,14 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.auth.firstName}*</span>
               <input
                 type="text"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("firstName")}
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  if (fieldErrors.firstName && e.target.value.trim()) {
+                    setFieldErrors((prev) => ({ ...prev, firstName: false }));
+                  }
+                }}
                 required
               />
             </label>
@@ -154,9 +223,14 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.auth.lastName}*</span>
               <input
                 type="text"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("lastName")}
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  if (fieldErrors.lastName && e.target.value.trim()) {
+                    setFieldErrors((prev) => ({ ...prev, lastName: false }));
+                  }
+                }}
                 required
               />
             </label>
@@ -165,9 +239,15 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.checkout.streetAddress}*</span>
               <input
                 type="text"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("streetAddress")}
                 value={streetAddress}
-                onChange={(e) => setStreetAddress(e.target.value)}
+                onChange={(e) => {
+                  setStreetAddress(e.target.value);
+                  if (fieldErrors.streetAddress && e.target.value.trim()) {
+                    setFieldErrors((prev) => ({ ...prev, streetAddress: false }));
+                  }
+                }}
+                placeholder="15 Soniachna St"
                 required
               />
             </label>
@@ -179,6 +259,7 @@ export default function CheckoutPage() {
                 className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
                 value={apartment}
                 onChange={(e) => setApartment(e.target.value)}
+                placeholder="Apt. 24"
               />
             </label>
 
@@ -186,9 +267,15 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.checkout.townCity}*</span>
               <input
                 type="text"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("townCity")}
                 value={townCity}
-                onChange={(e) => setTownCity(e.target.value)}
+                onChange={(e) => {
+                  setTownCity(e.target.value);
+                  if (fieldErrors.townCity && e.target.value.trim()) {
+                    setFieldErrors((prev) => ({ ...prev, townCity: false }));
+                  }
+                }}
+                placeholder="Kyiv"
                 required
               />
             </label>
@@ -197,9 +284,14 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.checkout.phoneNumber}*</span>
               <input
                 type="tel"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("phoneNumber")}
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value);
+                  if (fieldErrors.phoneNumber && e.target.value.trim()) {
+                    setFieldErrors((prev) => ({ ...prev, phoneNumber: false }));
+                  }
+                }}
                 required
               />
             </label>
@@ -208,9 +300,18 @@ export default function CheckoutPage() {
               <span className="mb-1 block text-sm text-gray-500">{t.checkout.emailAddress}*</span>
               <input
                 type="email"
-                className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                className={getInputClass("emailAddress")}
                 value={emailAddress}
-                onChange={(e) => setEmailAddress(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setEmailAddress(value);
+                  if (
+                    fieldErrors.emailAddress &&
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+                  ) {
+                    setFieldErrors((prev) => ({ ...prev, emailAddress: false }));
+                  }
+                }}
                 required
               />
             </label>
@@ -220,9 +321,15 @@ export default function CheckoutPage() {
                 <span className="mb-1 block text-sm text-gray-500">{t.checkout.postalCode}*</span>
                 <input
                   type="text"
-                  className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                  className={getInputClass("postalCode")}
                   value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
+                  onChange={(e) => {
+                    setPostalCode(e.target.value);
+                    if (fieldErrors.postalCode && e.target.value.trim()) {
+                      setFieldErrors((prev) => ({ ...prev, postalCode: false }));
+                    }
+                  }}
+                  placeholder="03150"
                   required
                 />
               </label>
@@ -230,9 +337,15 @@ export default function CheckoutPage() {
                 <span className="mb-1 block text-sm text-gray-500">{t.checkout.country}*</span>
                 <input
                   type="text"
-                  className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+                  className={getInputClass("country")}
                   value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    if (fieldErrors.country && e.target.value.trim()) {
+                      setFieldErrors((prev) => ({ ...prev, country: false }));
+                    }
+                  }}
+                  placeholder="Ukraine"
                   required
                 />
               </label>
@@ -349,3 +462,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

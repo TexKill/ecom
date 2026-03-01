@@ -55,6 +55,7 @@ export interface IOrder {
   shippingAddress: {
     address: string;
     city: string;
+    phoneNumber?: string;
     postalCode: string;
     country: string;
   };

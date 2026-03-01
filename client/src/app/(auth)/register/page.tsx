@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -234,5 +234,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterContent />
+    </Suspense>
   );
 }

@@ -4,8 +4,12 @@ import { Order } from "../models/Order";
 import { Product } from "../models/Product";
 import { protect } from "../middleware/Auth";
 import { admin } from "../middleware/Admin";
-import { validateBody } from "../middleware/Validate";
-import { createOrderSchema, payOrderSchema } from "../validation/order";
+import { validateBody, validateParams } from "../middleware/Validate";
+import {
+  createOrderSchema,
+  orderIdParamSchema,
+  payOrderSchema,
+} from "../validation/order";
 
 const orderRoute = express.Router();
 
@@ -74,6 +78,30 @@ orderRoute.post(
     const shippingPrice = itemsPrice > 100 ? 0 : 10;
     const totalPrice = Number((itemsPrice + shippingPrice).toFixed(2));
 
+    const qtyByProduct = normalizedOrderItems.reduce(
+      (acc, item) => {
+        const key = item.product.toString();
+        acc.set(key, (acc.get(key) || 0) + item.qty);
+        return acc;
+      },
+      new Map<string, number>(),
+    );
+
+    const stockUpdateOps = Array.from(qtyByProduct.entries()).map(
+      ([productId, qty]) => ({
+        updateOne: {
+          filter: { _id: productId, countInStock: { $gte: qty } },
+          update: { $inc: { countInStock: -qty } },
+        },
+      }),
+    );
+
+    const stockResult = await Product.bulkWrite(stockUpdateOps);
+    if (stockResult.modifiedCount !== stockUpdateOps.length) {
+      res.status(409);
+      throw new Error("Unable to reserve stock for one or more products");
+    }
+
     const order = new Order({
       user: req.user?._id,
       orderItems: normalizedOrderItems,
@@ -125,6 +153,7 @@ orderRoute.get(
 orderRoute.get(
   "/:id",
   protect,
+  validateParams(orderIdParamSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
 
@@ -152,6 +181,7 @@ orderRoute.get(
 orderRoute.put(
   "/:id/pay",
   protect,
+  validateParams(orderIdParamSchema),
   validateBody(payOrderSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
@@ -190,6 +220,7 @@ orderRoute.put(
   "/:id/deliver",
   protect,
   admin,
+  validateParams(orderIdParamSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
 
@@ -213,6 +244,7 @@ orderRoute.delete(
   "/:id",
   protect,
   admin,
+  validateParams(orderIdParamSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const order = await Order.findById(req.params.id);
 
