@@ -1,4 +1,5 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
+import { AuthRequest } from "../types/auth";
 import asyncHandler from "express-async-handler";
 import { User } from "../models/User";
 import generateToken from "../utils/tokenGenerate";
@@ -17,7 +18,7 @@ const userRoute = express.Router();
 userRoute.post(
   "/login",
   validateBody(loginSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
@@ -42,7 +43,7 @@ userRoute.post(
 userRoute.post(
   "/register",
   validateBody(registerSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { firstName, lastName, email, password } = req.body;
     const name = `${firstName} ${lastName}`.trim();
     const userExists = await User.findOne({ email });
@@ -75,7 +76,7 @@ userRoute.post(
 userRoute.get(
   "/profile",
   protect,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const user = await User.findById(req.user?._id);
 
     if (user) {
@@ -99,7 +100,7 @@ userRoute.put(
   "/profile",
   protect,
   validateBody(updateProfileSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const user = await User.findById(req.user?._id);
 
     if (user) {

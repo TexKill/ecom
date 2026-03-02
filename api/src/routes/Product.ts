@@ -1,4 +1,5 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
+import { AuthRequest } from "../types/auth";
 import asyncHandler from "express-async-handler";
 import { Product } from "../models/Product";
 import { protect } from "../middleware/Auth";
@@ -25,7 +26,7 @@ const productRoute = express.Router();
 productRoute.get(
   "/",
   validateQuery(productListQuerySchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { pageSize, pageNumber, keyword } = req.query as {
       pageSize?: string;
       pageNumber?: string;
@@ -34,9 +35,7 @@ productRoute.get(
 
     const limit = pageSize ? Number(pageSize) : 8;
     const page = pageNumber ? Number(pageNumber) : 1;
-    const filter = keyword
-      ? { name: { $regex: keyword, $options: "i" } }
-      : {};
+    const filter = keyword ? { name: { $regex: keyword, $options: "i" } } : {};
 
     const count = await Product.countDocuments(filter);
     const products = await Product.find(filter)
@@ -58,7 +57,7 @@ productRoute.get(
 productRoute.get(
   "/:id",
   validateParams(productIdParamSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
@@ -78,7 +77,7 @@ productRoute.post(
   protect,
   admin,
   validateBody(createProductSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const {
       name,
       price,
@@ -120,7 +119,7 @@ productRoute.put(
   admin,
   validateParams(productIdParamSchema),
   validateBody(updateProductSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const {
       name,
       price,
@@ -163,7 +162,7 @@ productRoute.delete(
   protect,
   admin,
   validateParams(productIdParamSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
@@ -184,7 +183,7 @@ productRoute.post(
   protect,
   validateParams(productIdParamSchema),
   validateBody(createReviewSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { rating, comment } = req.body;
     const product = await Product.findById(req.params.id);
 
@@ -228,7 +227,7 @@ productRoute.delete(
   protect,
   admin,
   validateParams(productReviewParamsSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id, reviewId } = req.params as { id: string; reviewId: string };
     const product = await Product.findById(id);
 

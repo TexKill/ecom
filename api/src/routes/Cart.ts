@@ -1,4 +1,6 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import { AuthRequest } from "../types/auth";
+import { Response } from "express";
 import { User } from "../models/User";
 import { protect } from "../middleware/Auth";
 import { validateBody } from "../middleware/Validate";
@@ -7,7 +9,7 @@ import { syncCartSchema } from "../validation/cart";
 const router = express.Router();
 
 // GET /api/cart
-router.get("/", protect, async (req: Request, res: Response) => {
+router.get("/", protect, async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.user!._id).select("cart").lean();
     if (!user) {
@@ -25,7 +27,7 @@ router.post(
   "/",
   protect,
   validateBody(syncCartSchema),
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { items } = req.body as {
         items: Array<{
@@ -57,7 +59,7 @@ router.post(
 );
 
 // DELETE /api/cart
-router.delete("/", protect, async (req: Request, res: Response) => {
+router.delete("/", protect, async (req: AuthRequest, res: Response) => {
   try {
     await User.findByIdAndUpdate(req.user!._id, { cart: [] });
     res.json({ message: "Cart cleared" });

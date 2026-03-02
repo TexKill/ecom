@@ -1,4 +1,6 @@
-import express, { Request, Response } from "express";
+import { AuthRequest } from "../types/auth";
+import { Response } from "express";
+import express from "express";
 import { User } from "../models/User";
 import { Product } from "../models/Product";
 import { protect } from "../middleware/Auth";
@@ -8,7 +10,7 @@ import { toggleFavoriteSchema } from "../validation/favorites";
 const router = express.Router();
 
 // GET /api/favorites
-router.get("/", protect, async (req: Request, res: Response) => {
+router.get("/", protect, async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.user!._id).select("favorites").lean();
     if (!user) {
@@ -26,7 +28,7 @@ router.post(
   "/toggle",
   protect,
   validateBody(toggleFavoriteSchema),
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { productId } = req.body as { productId: string };
 
@@ -74,7 +76,7 @@ router.post(
 );
 
 // DELETE /api/favorites
-router.delete("/", protect, async (req: Request, res: Response) => {
+router.delete("/", protect, async (req: AuthRequest, res: Response) => {
   try {
     await User.findByIdAndUpdate(req.user!._id, { favorites: [] });
     res.json({ message: "Favorites cleared" });

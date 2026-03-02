@@ -1,10 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
+import { AuthRequest } from "../types/auth";
 
-export const admin = (req: Request, res: Response, next: NextFunction) => {
+export const admin = (req: AuthRequest, res: Response, next: NextFunction) => {
   if (req.user && req.user.isAdmin) {
     next();
   } else {
-    res.status(403);
+    res.status(401);
     throw new Error("Not authorized as admin");
   }
 };

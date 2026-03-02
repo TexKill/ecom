@@ -1,4 +1,6 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import { AuthRequest } from "../types/auth";
+import { Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Order } from "../models/Order";
 import { Product } from "../models/Product";
@@ -20,7 +22,7 @@ orderRoute.post(
   "/",
   protect,
   validateBody(createOrderSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const { orderItems, shippingAddress, paymentMethod } = req.body;
 
     const uniqueProductIds: string[] = [
@@ -42,33 +44,33 @@ orderRoute.post(
 
     const productById = new Map(products.map((p) => [p._id.toString(), p]));
 
-    const normalizedOrderItems = (orderItems as Array<{ product: string; qty: number }>).map(
-      (item: { product: string; qty: number }) => {
-        const product = productById.get(item.product?.toString());
-        const qty = Number(item.qty);
+    const normalizedOrderItems = (
+      orderItems as Array<{ product: string; qty: number }>
+    ).map((item: { product: string; qty: number }) => {
+      const product = productById.get(item.product?.toString());
+      const qty = Number(item.qty);
 
-        if (!product) {
-          res.status(400);
-          throw new Error(`Product not found: ${item.product}`);
-        }
-        if (!Number.isFinite(qty) || qty <= 0) {
-          res.status(400);
-          throw new Error("Invalid quantity in order item");
-        }
-        if (qty > product.countInStock) {
-          res.status(400);
-          throw new Error(`Insufficient stock for product: ${product.name}`);
-        }
+      if (!product) {
+        res.status(400);
+        throw new Error(`Product not found: ${item.product}`);
+      }
+      if (!Number.isFinite(qty) || qty <= 0) {
+        res.status(400);
+        throw new Error("Invalid quantity in order item");
+      }
+      if (qty > product.countInStock) {
+        res.status(400);
+        throw new Error(`Insufficient stock for product: ${product.name}`);
+      }
 
-        return {
-          name: product.name,
-          qty,
-          image: product.image,
-          price: product.price,
-          product: product._id,
-        };
-      },
-    );
+      return {
+        name: product.name,
+        qty,
+        image: product.image,
+        price: product.price,
+        product: product._id,
+      };
+    });
 
     const itemsPrice = normalizedOrderItems.reduce(
       (sum: number, item: { price: number; qty: number }) =>
@@ -78,14 +80,11 @@ orderRoute.post(
     const shippingPrice = itemsPrice > 100 ? 0 : 10;
     const totalPrice = Number((itemsPrice + shippingPrice).toFixed(2));
 
-    const qtyByProduct = normalizedOrderItems.reduce(
-      (acc, item) => {
-        const key = item.product.toString();
-        acc.set(key, (acc.get(key) || 0) + item.qty);
-        return acc;
-      },
-      new Map<string, number>(),
-    );
+    const qtyByProduct = normalizedOrderItems.reduce((acc, item) => {
+      const key = item.product.toString();
+      acc.set(key, (acc.get(key) || 0) + item.qty);
+      return acc;
+    }, new Map<string, number>());
 
     const stockUpdateOps = Array.from(qtyByProduct.entries()).map(
       ([productId, qty]) => ({
@@ -124,7 +123,7 @@ orderRoute.post(
 orderRoute.get(
   "/myorders",
   protect,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const orders = await Order.find({ user: req.user?._id }).sort({
       createdAt: -1,
     });
@@ -139,7 +138,7 @@ orderRoute.get(
   "/",
   protect,
   admin,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const orders = await Order.find({})
       .populate("user", "id name email")
       .sort({ createdAt: -1 });
@@ -154,7 +153,7 @@ orderRoute.get(
   "/:id",
   protect,
   validateParams(orderIdParamSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
@@ -183,7 +182,7 @@ orderRoute.put(
   protect,
   validateParams(orderIdParamSchema),
   validateBody(payOrderSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
@@ -221,7 +220,7 @@ orderRoute.put(
   protect,
   admin,
   validateParams(orderIdParamSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
@@ -245,7 +244,7 @@ orderRoute.delete(
   protect,
   admin,
   validateParams(orderIdParamSchema),
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: AuthRequest, res: Response) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {

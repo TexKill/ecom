@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
+import { AuthRequest } from "../types/auth";
 import { User } from "../models/User";
 import { IUser } from "../types";
 
@@ -9,7 +10,7 @@ interface JwtPayload {
 }
 
 export const protect = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     let token: string | undefined;
 
     if (
