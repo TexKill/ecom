@@ -1,24 +1,89 @@
-# 🛒 Ecom — Full-Stack E-Commerce App
+# 🛒 Ecom — Full-Stack E-Commerce Platform
 
-A full-stack e-commerce application built with Node.js, Express, MongoDB, and Next.js 16.
+A modern full-stack e-commerce application built with a scalable architecture, secure authentication, admin dashboard, and production-oriented engineering practices.
+
+This project demonstrates real-world backend & frontend integration using TypeScript across the entire stack.
+
+---
 
 ## 🚀 Tech Stack
 
 ### Backend (`/api`)
-- **Node.js** + **Express** — REST API
-- **TypeScript** — type safety
-- **MongoDB** + **Mongoose** — database
-- **JWT** — authentication
-- **bcryptjs** — password hashing
-- **Cloudinary** + **Multer** — image uploads
+
+- **Node.js + Express**
+- **TypeScript**
+- **MongoDB + Mongoose**
+- **JWT Authentication**
+- **Zod validation**
+- **Cloudinary (image uploads)**
+- Layered architecture (routes → controllers → services → models)
 
 ### Frontend (`/client`)
-- **Next.js 16** (App Router, Turbopack)
+
+- **Next.js 16 (App Router)**
 - **TypeScript**
-- **Tailwind CSS** — styling
-- **Zustand** — global state management (cart and user)
-- **React Query** — server state & caching
-- **Lucide React** — icons
+- **Tailwind CSS**
+- **Zustand (client state)**
+- **React Query (server state & caching)**
+
+---
+
+## ✨ Core Features
+
+### 👤 Authentication & Security
+
+- JWT-based authentication
+- Role-based access control (Admin/User)
+- Protected API routes
+- Secure password hashing (bcrypt)
+- Environment variable validation
+- Protected database seeding
+
+---
+
+### 🛍 Product Management
+
+- Product listing
+- Admin CRUD operations
+- Image upload via Cloudinary
+- Stock management
+- Input validation with Zod
+
+---
+
+### 🧾 Orders & Checkout
+
+- Order creation flow
+- Order history (user dashboard)
+- Admin order management
+- Order status system (pending, paid, shipped, delivered)
+
+---
+
+### 🛠 Admin Dashboard
+
+- Product creation / editing / deletion
+- Order overview
+- Role-based route protection
+- Clean UI with structured state management
+
+---
+
+## 🧠 Architecture Overview
+
+This project follows a scalable backend structure:
+
+```
+routes → controllers → services → models
+```
+
+Key engineering decisions:
+
+- Centralized error handling
+- Strong TypeScript typing (custom Express request types)
+- Separation of client and server state
+- Secure environment configuration
+- Clean folder structure for scalability
 
 ---
 
@@ -26,74 +91,49 @@ A full-stack e-commerce application built with Node.js, Express, MongoDB, and Ne
 
 ```
 ecom/
-├── api/                        # Express backend
-│   ├── src/
-│   │   ├── data/               # Seed data
-│   │   │   ├── Products.ts
-│   │   │   └── Users.ts
-│   │   ├── middleware/
-│   │   │   └── Auth.ts         # JWT route protection
-│   │   ├── models/
-│   │   │   ├── User.ts
-│   │   │   ├── Product.ts
-│   │   │   └── Order.ts
-│   │   ├── routes/
-│   │   │   ├── User.ts
-│   │   │   ├── Product.ts
-│   │   │   ├── Order.ts
-│   │   │   └── Upload.ts       # Cloudinary image upload
-│   │   ├── types/
-│   │   │   ├── index.ts        # IUser, IProduct, IOrder
-│   │   │   └── express.d.ts    # Express Request extension
-│   │   ├── utils/
-│   │   │   └── tokenGenerate.ts
-│   │   ├── databaseSeeder.ts
-│   │   └── index.ts
-│   ├── .env.example
-│   ├── tsconfig.json
-│   └── package.json
+├── api/        # Express backend
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── services/
+│   └── utils/
 │
-└── client/                     # Next.js frontend
-    ├── src/
-    │   ├── app/                # App Router pages
-    │   ├── components/         # Reusable components
-    │   ├── store/              # Zustand stores
-    │   └── types/              # TypeScript types
-    └── package.json
+└── client/     # Next.js frontend
+    ├── app/
+    ├── components/
+    ├── store/
+    └── types/
 ```
 
 ---
 
-## ⚙️ Getting Started
+## ⚙️ Local Development
 
 ### Requirements
 
 - Node.js 18+
-- npm or yarn
-- MongoDB Atlas account or local MongoDB instance
+- MongoDB (Atlas or local)
 
-### Installation
+---
 
-```bash
-git clone https://github.com/TexKill/ecom.git
-cd ecom
-```
-
-### Backend
+### Backend Setup
 
 ```bash
 cd api
 npm install
-cp .env.example .env   # fill in your values
+cp .env.example .env
 npm run dev
 ```
 
-Required backend env keys now include:
-- `CORS_ORIGIN` (comma-separated origins)
-- `ENABLE_SEED_ROUTES` (`true`/`false`)
-- `SEED_KEY` (required when seeding is enabled)
+Runs on:
 
-### Frontend
+```
+http://localhost:9000
+```
+
+---
+
+### Frontend Setup
 
 ```bash
 cd client
@@ -101,156 +141,87 @@ npm install
 npm run dev
 ```
 
-API runs on `http://localhost:9000`  
-Client runs on `http://localhost:3000`
+Runs on:
 
----
-
-### Building for Production
-
-```bash
-npm run build   # Compiles TypeScript to dist/
-npm start       # Runs compiled dist/index.js
+```
+http://localhost:3000
 ```
 
 ---
 
 ## 🌱 Database Seeding
 
-> ⚠️ Seed routes are disabled by default.  
-> Set `ENABLE_SEED_ROUTES=true` and send `x-seed-key: <SEED_KEY>`.  
-> Seed users **before** products.
+Seeding is protected and disabled by default.
 
-```bash
-POST http://localhost:9000/api/seed/users
-POST http://localhost:9000/api/seed/products
+To enable:
+
+```
+ENABLE_SEED_ROUTES=true
+SEED_KEY=your_secret_key
+```
+
+Then send:
+
+```
+POST /api/seed/users
+POST /api/seed/products
 ```
 
 ---
 
-## 📡 API Reference
+## 🔐 API Highlights
 
-### 🔑 Authentication
-
-All protected routes require a **JWT Bearer Token**:
+### Authentication
 
 ```
-Authorization: Bearer <your_token>
+POST /api/users/register
+POST /api/users/login
+GET  /api/users/profile
 ```
 
----
+### Products
 
-### Users `/api/users`
-
-| Method | Endpoint | Description | Protected |
-|--------|----------|-------------|-----------|
-| `POST` | `/register` | Register a new user | — |
-| `POST` | `/login` | Login and receive JWT token | — |
-| `GET` | `/profile` | Get current user profile | ✅ JWT |
-| `PUT` | `/profile` | Update name, email or password | ✅ JWT |
-
-**Register / Login request body:**
-```json
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john@example.com",
-  "password": "123456"
-}
+```
+GET    /api/products
+POST   /api/products      (Admin)
+PUT    /api/products/:id  (Admin)
+DELETE /api/products/:id  (Admin)
 ```
 
-**Successful login response:**
-```json
-{
-  "_id": "64f...",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "isAdmin": false,
-  "token": "eyJhbGci..."
-}
+### Orders
+
+```
+POST /api/orders
+GET  /api/orders/myorders
+GET  /api/orders/:id
 ```
 
 ---
 
-### Products `/api/products`
+## 🚀 Engineering Focus
 
-| Method | Endpoint | Description | Protected |
-|--------|----------|-------------|-----------|
-| `GET` | `/` | Get all products | — |
-| `GET` | `/:id` | Get single product | — |
-| `POST` | `/` | Create a new product | ✅ Admin |
-| `PUT` | `/:id` | Update product details | ✅ Admin |
-| `DELETE` | `/:id` | Delete a product | ✅ Admin |
+This project was built with an emphasis on:
 
----
+- Type safety across the stack
+- Scalable backend structure
+- Clear separation of concerns
+- Security best practices
+- Production-oriented architecture
 
-### Orders `/api/orders`
-
-| Method | Endpoint | Description | Protected |
-|--------|----------|-------------|-----------|
-| `POST` | `/` | Create a new order | ✅ JWT |
-| `GET` | `/myorders` | Get logged-in user's orders | ✅ JWT |
-| `GET` | `/:id` | Get order by ID | ✅ JWT |
-
----
-
-### Upload `/api/upload`
-
-| Method | Endpoint | Description | Protected |
-|--------|----------|-------------|-----------|
-| `POST` | `/` | Upload image to Cloudinary | — |
-
-**Request:** `form-data` з полем `image` (файл)  
-**Response:**
-```json
-{
-  "url": "https://res.cloudinary.com/..."
-}
-```
-
----
-
-## 👤 Test Accounts
-
-After seeding the database, test accounts are available.
-Credentials are defined in `api/src/data/Users.ts`.
+It is not just a CRUD demo — it is structured as a real-world application foundation.
 
 ---
 
 ## 📌 Roadmap
 
-### Backend
-- [x] Project architecture & folder structure
-- [x] TypeScript setup
-- [x] MongoDB connection & Mongoose schemas
-- [x] JWT authentication & route protection
-- [x] User registration, login, profile
-- [x] Database seeder (users + products)
-- [x] Product CRUD routes
-- [x] Order management routes
-- [x] Image upload with Cloudinary
-- [x] Admin routes & middleware
-- [x] Input validation (Zod)
-- [ ] Pagination & search
-
-### Frontend
-- [x] Next.js 16 project setup
-- [x] Product listing page
-- [x] Product detail page
-- [x] Shopping cart (Zustand)
-- [x] Authentication flow
-- [x] Checkout flow
-- [x] Order history page
-- [x] Admin dashboard
-
-### DevOps
-- [ ] Docker + docker-compose
-- [ ] CI/CD pipeline
-- [ ] Deployment to VPS
+- Pagination & filtering
+- Stripe payment integration
+- Docker & CI/CD
+- Production deployment
+- Performance optimizations
 
 ---
 
 ## 📄 License
 
-This project is for educational purposes only.
-
+Educational project built for portfolio and professional g

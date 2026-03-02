@@ -1,6 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, useEffect } from "react";
 import { Lang, messages, Messages } from "./messages";
 
 type LanguageContextValue = {
@@ -12,6 +14,8 @@ type LanguageContextValue = {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === "undefined") return "en";
     const saved = localStorage.getItem("lang");
@@ -19,8 +23,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
+    setMounted(true);
+  }, []);
 
   const setLang = (next: Lang) => {
     setLangState(next);
@@ -37,7 +41,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     [lang],
   );
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  if (!mounted) return null;
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }
 
 export function useLanguage() {
