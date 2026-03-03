@@ -89,6 +89,17 @@ export default function HomePage() {
           </form>
         </div>
 
+        {loading && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-gray-100 rounded-xl h-[360px] animate-pulse"
+              />
+            ))}
+          </div>
+        )}
+
         {!loading && error && (
           <div className="text-center py-20">
             <p className="text-red-500 text-lg">{error}</p>
