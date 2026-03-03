@@ -17,6 +17,7 @@ import { IOrder, IProduct, IUser } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import Pagination from "@/components/ui/Pagination";
 
 const emptyForm: ProductPayload = {
   name: "",
@@ -43,18 +44,26 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderTotalPages, setOrderTotalPages] = useState(1);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductPayload>(emptyForm);
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
 
+  const loadFailMsg = t.admin.loadFail;
+
   useEffect(() => {
     if (!hasHydrated) return;
+
     if (!user) {
       router.replace("/login?redirect=/admin");
       return;
     }
+
     if (!user.isAdmin) {
       router.replace("/");
       return;
@@ -64,21 +73,27 @@ export default function AdminPage() {
       try {
         setLoading(true);
         setError("");
-        const [productsRes, ordersRes] = await Promise.all([
-          getProducts("", 1),
-          getAllOrders(),
-        ]);
-        setProducts(productsRes.products);
-        setOrders(ordersRes);
+
+        if (tab === "products") {
+          const productsRes = await getProducts("", page, 15);
+          setProducts(productsRes.products);
+          setTotalPages(productsRes.pages);
+        }
+
+        if (tab === "orders") {
+          const ordersRes = await getAllOrders(orderPage);
+          setOrders(ordersRes.orders);
+          setOrderTotalPages(ordersRes.pages);
+        }
       } catch {
-        setError(t.admin.loadFail);
+        setError(loadFailMsg);
       } finally {
         setLoading(false);
       }
     };
 
     load();
-  }, [hasHydrated, user, router, t.admin.loadFail]);
+  }, [hasHydrated, user, router, tab, page, orderPage, loadFailMsg]);
 
   useEffect(() => {
     if (!error) return;
@@ -120,7 +135,9 @@ export default function AdminPage() {
 
       if (editingId) {
         const updated = await updateProduct(editingId, payload);
-        setProducts((prev) => prev.map((p) => (p._id === editingId ? updated : p)));
+        setProducts((prev) =>
+          prev.map((p) => (p._id === editingId ? updated : p)),
+        );
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
@@ -238,51 +255,69 @@ export default function AdminPage() {
                 </h2>
                 <div className="space-y-3">
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.productName}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.productName}
+                    </span>
                     <input
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="iPhone 15 Pro"
                       value={form.name}
-                      onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({ ...s, name: e.target.value }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.brand}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.brand}
+                    </span>
                     <input
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="Apple"
                       value={form.brand}
-                      onChange={(e) => setForm((s) => ({ ...s, brand: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({ ...s, brand: e.target.value }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.category}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.category}
+                    </span>
                     <input
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="Electronics"
                       value={form.category}
-                      onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({ ...s, category: e.target.value }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.imageUrl}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.imageUrl}
+                    </span>
                     <input
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="https://..."
                       value={form.image}
-                      onChange={(e) => setForm((s) => ({ ...s, image: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({ ...s, image: e.target.value }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.uploadImageFile}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.uploadImageFile}
+                    </span>
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -298,48 +333,76 @@ export default function AdminPage() {
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.priceUah}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.priceUah}
+                    </span>
                     <input
                       type="number"
                       step="0.01"
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="19999"
                       value={form.price}
-                      onChange={(e) => setForm((s) => ({ ...s, price: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setForm((s) => ({
+                          ...s,
+                          price: Number(e.target.value),
+                        }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.countInStock}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.countInStock}
+                    </span>
                     <input
                       type="number"
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder="25"
                       value={form.countInStock}
-                      onChange={(e) => setForm((s) => ({ ...s, countInStock: Number(e.target.value) }))}
+                      onChange={(e) =>
+                        setForm((s) => ({
+                          ...s,
+                          countInStock: Number(e.target.value),
+                        }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.descriptionUk}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.descriptionUk}
+                    </span>
                     <textarea
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder={t.admin.shortDescription}
                       value={form.descriptionUk || ""}
-                      onChange={(e) => setForm((s) => ({ ...s, descriptionUk: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({
+                          ...s,
+                          descriptionUk: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-gray-600">{t.admin.descriptionEn}</span>
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.descriptionEn}
+                    </span>
                     <textarea
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                       placeholder={t.admin.shortDescription}
                       value={form.descriptionEn || ""}
-                      onChange={(e) => setForm((s) => ({ ...s, descriptionEn: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((s) => ({
+                          ...s,
+                          descriptionEn: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </label>
@@ -350,7 +413,11 @@ export default function AdminPage() {
                     disabled={saving}
                     className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-red-500 disabled:bg-gray-400"
                   >
-                    {saving ? t.admin.saving : isEditing ? t.admin.update : t.admin.create}
+                    {saving
+                      ? t.admin.saving
+                      : isEditing
+                        ? t.admin.update
+                        : t.admin.create}
                   </button>
                   {isEditing && (
                     <button
@@ -364,96 +431,124 @@ export default function AdminPage() {
                 </div>
               </form>
 
-              <div className="overflow-x-auto rounded-lg border border-gray-200 lg:col-span-2">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left">{t.admin.name}</th>
-                      <th className="px-3 py-2 text-left">{t.admin.price}</th>
-                      <th className="px-3 py-2 text-left">{t.admin.stock}</th>
-                      <th className="px-3 py-2 text-left">{t.admin.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((product) => (
-                      <tr key={product._id} className="border-t">
-                        <td className="px-3 py-2">{product.name}</td>
-                        <td className="px-3 py-2">₴{product.price.toFixed(2)}</td>
-                        <td className="px-3 py-2">{product.countInStock}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => startEdit(product)}
-                              className="rounded border border-gray-300 px-2 py-1 hover:border-black"
-                            >
-                              {t.admin.edit}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(product._id)}
-                              className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
-                            >
-                              {t.admin.delete}
-                            </button>
-                          </div>
-                        </td>
+              <div className="rounded-lg border border-gray-200 lg:col-span-2">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">{t.admin.name}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.price}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.stock}</th>
+                        <th className="px-3 py-2 text-left">
+                          {t.admin.actions}
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {products.map((product) => (
+                        <tr key={product._id} className="border-t">
+                          <td className="px-3 py-2">{product.name}</td>
+                          <td className="px-3 py-2">
+                            ₴{product.price.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2">{product.countInStock}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => startEdit(product)}
+                                className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                              >
+                                {t.admin.edit}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product._id)}
+                                className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
+                              >
+                                {t.admin.delete}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Pagination для products */}
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               </div>
             </div>
           )}
 
           {tab === "orders" && (
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left">{t.admin.order}</th>
-                    <th className="px-3 py-2 text-left">{t.admin.user}</th>
-                    <th className="px-3 py-2 text-left">{t.admin.total}</th>
-                    <th className="px-3 py-2 text-left">{t.admin.paid}</th>
-                    <th className="px-3 py-2 text-left">{t.admin.delivered}</th>
-                    <th className="px-3 py-2 text-left">{t.admin.actions}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => {
-                    const orderUser = order.user as IUser | string;
-                    const userText =
-                      typeof orderUser === "string"
-                        ? orderUser.slice(-6)
-                        : `${orderUser.name} (${orderUser.email})`;
-                    return (
-                      <tr key={order._id} className="border-t">
-                        <td className="px-3 py-2">{order._id.slice(-8)}</td>
-                        <td className="px-3 py-2">{userText}</td>
-                        <td className="px-3 py-2">₴{order.totalPrice.toFixed(2)}</td>
-                        <td className="px-3 py-2">{order.isPaid ? t.admin.yes : t.admin.no}</td>
-                        <td className="px-3 py-2">{order.isDelivered ? t.admin.yes : t.admin.no}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex gap-2">
-                            {!order.isDelivered && (
+            <div className="rounded-lg border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left">{t.admin.order}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.user}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.total}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.paid}</th>
+                      <th className="px-3 py-2 text-left">
+                        {t.admin.delivered}
+                      </th>
+                      <th className="px-3 py-2 text-left">{t.admin.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => {
+                      const orderUser = order.user as IUser | string;
+                      const userText =
+                        typeof orderUser === "string"
+                          ? orderUser.slice(-6)
+                          : `${orderUser.name} (${orderUser.email})`;
+                      return (
+                        <tr key={order._id} className="border-t">
+                          <td className="px-3 py-2">{order._id.slice(-8)}</td>
+                          <td className="px-3 py-2">{userText}</td>
+                          <td className="px-3 py-2">
+                            ₴{order.totalPrice.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2">
+                            {order.isPaid ? t.admin.yes : t.admin.no}
+                          </td>
+                          <td className="px-3 py-2">
+                            {order.isDelivered ? t.admin.yes : t.admin.no}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-2">
+                              {!order.isDelivered && (
+                                <button
+                                  onClick={() => handleDeliverOrder(order._id)}
+                                  className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                                >
+                                  {t.admin.deliver}
+                                </button>
+                              )}
                               <button
-                                onClick={() => handleDeliverOrder(order._id)}
-                                className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                                onClick={() => handleDeleteOrder(order._id)}
+                                className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
                               >
-                                {t.admin.deliver}
+                                {t.admin.delete}
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteOrder(order._id)}
-                              className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
-                            >
-                              {t.admin.delete}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Pagination для orders */}
+              <Pagination
+                currentPage={orderPage}
+                totalPages={orderTotalPages}
+                onPageChange={setOrderPage}
+              />
             </div>
           )}
         </>

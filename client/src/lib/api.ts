@@ -1,7 +1,6 @@
 import axiosInstance from "./axios";
 import { IProduct, IUser, IOrder } from "../types";
 
-// â”€â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const loginUser = async (email: string, password: string) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
     "/api/users/login",
@@ -28,14 +27,15 @@ export const getUserProfile = async () => {
   return data;
 };
 
-// â”€â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export const getProducts = async (keyword = "", pageNumber = 1) => {
-  const { data } = await axiosInstance.get<{
-    products: IProduct[];
-    page: number;
-    pages: number;
-    total: number;
-  }>(`/api/products?keyword=${keyword}&pageNumber=${pageNumber}`);
+export const getProducts = async (
+  keyword = "",
+  pageNumber = 1,
+  pageSize = 8,
+) => {
+  const { data } = await axiosInstance.get(
+    `/api/products?keyword=${keyword}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
+  );
+
   return data;
 };
 
@@ -55,14 +55,16 @@ export const createProductReview = async (
   return data;
 };
 
-export const deleteProductReview = async (productId: string, reviewId: string) => {
+export const deleteProductReview = async (
+  productId: string,
+  reviewId: string,
+) => {
   const { data } = await axiosInstance.delete<{ message: string }>(
     `/api/products/${productId}/reviews/${reviewId}`,
   );
   return data;
 };
 
-// â”€â”€â”€ Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const createOrder = async (orderData: Partial<IOrder>) => {
   const { data } = await axiosInstance.post<IOrder>("/api/orders", orderData);
   return data;
@@ -79,8 +81,10 @@ export const getOrderById = async (id: string) => {
 };
 
 // Admin Orders
-export const getAllOrders = async () => {
-  const { data } = await axiosInstance.get<IOrder[]>("/api/orders");
+export const getAllOrders = async (
+  page = 1,
+): Promise<{ orders: IOrder[]; pages: number; page: number }> => {
+  const { data } = await axiosInstance.get(`/api/orders?page=${page}`);
   return data;
 };
 
@@ -114,8 +118,14 @@ export const createProduct = async (payload: ProductPayload) => {
   return data;
 };
 
-export const updateProduct = async (id: string, payload: Partial<ProductPayload>) => {
-  const { data } = await axiosInstance.put<IProduct>(`/api/products/${id}`, payload);
+export const updateProduct = async (
+  id: string,
+  payload: Partial<ProductPayload>,
+) => {
+  const { data } = await axiosInstance.put<IProduct>(
+    `/api/products/${id}`,
+    payload,
+  );
   return data;
 };
 
