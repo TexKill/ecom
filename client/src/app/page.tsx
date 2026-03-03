@@ -6,6 +6,7 @@ import { IProduct } from "@/types";
 import ProductCard from "@/components/products/ProductCard";
 import { Search } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import Link from "next/link";
 
 export default function HomePage() {
   const { t } = useLanguage();
@@ -44,9 +45,12 @@ export default function HomePage() {
         flex flex-col md:flex-row items-center justify-between gap-8"
       >
         <div className="flex flex-col gap-4 max-w-md">
-          <p className="text-green-400 text-sm tracking-widest uppercase">{t.home.deals}</p>
+          <p className="text-green-400 text-sm tracking-widest uppercase">
+            {t.home.deals}
+          </p>
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-            {t.home.heroTitleStart} <span className="text-red-500">{t.home.heroTitleAccent}</span>
+            {t.home.heroTitleStart}{" "}
+            <span className="text-red-500">{t.home.heroTitleAccent}</span>
           </h1>
           <p className="text-gray-400 text-sm">{t.home.heroSubtitle}</p>
           <a
@@ -85,17 +89,6 @@ export default function HomePage() {
           </form>
         </div>
 
-        {loading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-gray-100 rounded-lg h-72 animate-pulse"
-              />
-            ))}
-          </div>
-        )}
-
         {!loading && error && (
           <div className="text-center py-20">
             <p className="text-red-500 text-lg">{error}</p>
@@ -119,11 +112,22 @@ export default function HomePage() {
         )}
 
         {!loading && !error && products.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+
+            <div className="flex justify-center mt-8">
+              <Link
+                href="/products"
+                className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition duration-300"
+              >
+                {t.home.seeAll}
+              </Link>
+            </div>
+          </>
         )}
       </section>
     </div>

@@ -20,25 +20,87 @@ import {
 
 const productRoute = express.Router();
 
-// @desc   Get all products with search & pagination
-// @route  GET /api/products
-// @access Public
+/* ======================================================
+   @desc   Get all products (search + filters + pagination + sorting)
+   @route  GET /api/products
+   @access Public
+====================================================== */
 productRoute.get(
   "/",
   validateQuery(productListQuerySchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { pageSize, pageNumber, keyword } = req.query as {
+    const {
+      pageSize,
+      pageNumber,
+      keyword,
+      brand,
+      category,
+      minPrice,
+      maxPrice,
+      sort,
+    } = req.query as {
       pageSize?: string;
       pageNumber?: string;
       keyword?: string;
+      brand?: string;
+      category?: string;
+      minPrice?: string;
+      maxPrice?: string;
+      sort?: string;
     };
 
     const limit = pageSize ? Number(pageSize) : 8;
     const page = pageNumber ? Number(pageNumber) : 1;
-    const filter = keyword ? { name: { $regex: keyword, $options: "i" } } : {};
+
+    const filter: any = {};
+
+    // Search
+    if (keyword) {
+      filter.name = { $regex: keyword, $options: "i" };
+    }
+
+    // Brand filter (Apple,Samsung)
+    if (brand) {
+      filter.brand = { $in: brand.split(",") };
+    }
+
+    // Category filter
+    if (category) {
+      filter.category = category;
+    }
+
+    // Price range
+    if (minPrice || maxPrice) {
+      filter.price = {
+        ...(minPrice && { $gte: Number(minPrice) }),
+        ...(maxPrice && { $lte: Number(maxPrice) }),
+      };
+    }
+
+    // Sorting
+    let sortOption: any = { createdAt: -1 }; // default: newest
+
+    if (sort) {
+      switch (sort) {
+        case "price_asc":
+          sortOption = { price: 1 };
+          break;
+        case "price_desc":
+          sortOption = { price: -1 };
+          break;
+        case "rating_desc":
+          sortOption = { rating: -1 };
+          break;
+        case "name_asc":
+          sortOption = { name: 1 };
+          break;
+      }
+    }
 
     const count = await Product.countDocuments(filter);
+
     const products = await Product.find(filter)
+      .sort(sortOption)
       .limit(limit)
       .skip(limit * (page - 1));
 
@@ -51,27 +113,72 @@ productRoute.get(
   }),
 );
 
-// @desc   Get single product by ID
-// @route  GET /api/products/:id
-// @access Public
+/* ======================================================
+   @desc   Get product filter metadata
+   @route  GET /api/products/filters
+   @access Public
+====================================================== */
+productRoute.get(
+  "/filters",
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Get all unique brands
+    const brands = await Product.distinct("brand");
+
+    // Get all unique categories
+    const categories = await Product.distinct("category");
+
+    // Get min & max price
+    const priceStats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
+    ]);
+
+    const priceRange =
+      priceStats.length > 0
+        ? {
+            min: priceStats[0].minPrice,
+            max: priceStats[0].maxPrice,
+          }
+        : { min: 0, max: 0 };
+
+    res.json({
+      brands,
+      categories,
+      priceRange,
+    });
+  }),
+);
+
+/* ======================================================
+   @desc   Get single product
+   @route  GET /api/products/:id
+   @access Public
+====================================================== */
 productRoute.get(
   "/:id",
   validateParams(productIdParamSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const product = await Product.findById(req.params.id);
 
-    if (product) {
-      res.json(product);
-    } else {
+    if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
+
+    res.json(product);
   }),
 );
 
-// @desc   Create a product
-// @route  POST /api/products
-// @access Admin
+/* ======================================================
+   @desc   Create product
+   @route  POST /api/products
+   @access Admin
+====================================================== */
 productRoute.post(
   "/",
   protect,
@@ -110,9 +217,11 @@ productRoute.post(
   }),
 );
 
-// @desc   Update a product
-// @route  PUT /api/products/:id
-// @access Admin
+/* ======================================================
+   @desc   Update product
+   @route  PUT /api/products/:id
+   @access Admin
+====================================================== */
 productRoute.put(
   "/:id",
   protect,
@@ -120,43 +229,28 @@ productRoute.put(
   validateParams(productIdParamSchema),
   validateBody(updateProductSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const {
-      name,
-      price,
-      description,
-      descriptionUk,
-      descriptionEn,
-      image,
-      brand,
-      category,
-      countInStock,
-    } = req.body;
-
     const product = await Product.findById(req.params.id);
 
-    if (product) {
-      product.name = name ?? product.name;
-      product.price = price ?? product.price;
-      product.description = description ?? product.description;
-      product.descriptionUk = descriptionUk ?? product.descriptionUk;
-      product.descriptionEn = descriptionEn ?? product.descriptionEn;
-      product.image = image ?? product.image;
-      product.brand = brand ?? product.brand;
-      product.category = category ?? product.category;
-      product.countInStock = countInStock ?? product.countInStock;
-
-      const updatedProduct = await product.save();
-      res.json(updatedProduct);
-    } else {
+    if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
+
+    Object.assign(product, {
+      ...product.toObject(),
+      ...req.body,
+    });
+
+    const updatedProduct = await product.save();
+    res.json(updatedProduct);
   }),
 );
 
-// @desc   Delete a product
-// @route  DELETE /api/products/:id
-// @access Admin
+/* ======================================================
+   @desc   Delete product
+   @route  DELETE /api/products/:id
+   @access Admin
+====================================================== */
 productRoute.delete(
   "/:id",
   protect,
@@ -165,19 +259,21 @@ productRoute.delete(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const product = await Product.findById(req.params.id);
 
-    if (product) {
-      await product.deleteOne();
-      res.json({ message: "Product removed" });
-    } else {
+    if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
+
+    await product.deleteOne();
+    res.json({ message: "Product removed" });
   }),
 );
 
-// @desc   Create a review
-// @route  POST /api/products/:id/reviews
-// @access Private
+/* ======================================================
+   @desc   Create review
+   @route  POST /api/products/:id/reviews
+   @access Private
+====================================================== */
 productRoute.post(
   "/:id/reviews",
   protect,
@@ -187,48 +283,53 @@ productRoute.post(
     const { rating, comment } = req.body;
     const product = await Product.findById(req.params.id);
 
-    if (product) {
-      const alreadyReviewed = product.reviews.find(
-        (r) => r.user.toString() === req.user?._id.toString(),
-      );
-
-      if (alreadyReviewed) {
-        res.status(400);
-        throw new Error("Product already reviewed");
-      }
-
-      const review = {
-        name: req.user?.name as string,
-        rating: Number(rating),
-        comment,
-        user: req.user?._id,
-      };
-
-      product.reviews.push(review as any);
-      product.numReviews = product.reviews.length;
-      product.rating =
-        product.reviews.reduce((acc, r) => acc + r.rating, 0) /
-        product.reviews.length;
-
-      await product.save();
-      res.status(201).json({ message: "Review added" });
-    } else {
+    if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
+
+    const alreadyReviewed = product.reviews.find(
+      (r) => r.user.toString() === req.user?._id.toString(),
+    );
+
+    if (alreadyReviewed) {
+      res.status(400);
+      throw new Error("Product already reviewed");
+    }
+
+    product.reviews.push({
+      name: req.user?.name as string,
+      rating: Number(rating),
+      comment,
+      user: req.user?._id,
+    } as any);
+
+    product.numReviews = product.reviews.length;
+    product.rating =
+      product.reviews.reduce((acc, r) => acc + r.rating, 0) /
+      product.reviews.length;
+
+    await product.save();
+    res.status(201).json({ message: "Review added" });
   }),
 );
 
-// @desc   Delete a review
-// @route  DELETE /api/products/:id/reviews/:reviewId
-// @access Admin
+/* ======================================================
+   @desc   Delete review
+   @route  DELETE /api/products/:id/reviews/:reviewId
+   @access Admin
+====================================================== */
 productRoute.delete(
   "/:id/reviews/:reviewId",
   protect,
   admin,
   validateParams(productReviewParamsSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id, reviewId } = req.params as { id: string; reviewId: string };
+    const { id, reviewId } = req.params as {
+      id: string;
+      reviewId: string;
+    };
+
     const product = await Product.findById(id);
 
     if (!product) {
@@ -246,6 +347,7 @@ productRoute.delete(
     }
 
     product.reviews.splice(reviewIndex, 1);
+
     product.numReviews = product.reviews.length;
     product.rating =
       product.reviews.length === 0
@@ -254,6 +356,7 @@ productRoute.delete(
           product.reviews.length;
 
     await product.save();
+
     res.json({ message: "Review removed" });
   }),
 );

@@ -64,6 +64,7 @@ export type Messages = {
     loadFail: string;
     tryAgain: string;
     noProductsFound: string;
+    seeAll: string;
   };
   products: {
     allProducts: string;
@@ -317,6 +318,7 @@ const en: Messages = {
     loadFail: "Failed to load products. Is the backend running?",
     tryAgain: "Try again",
     noProductsFound: "No products found",
+    seeAll: "See All",
   },
   products: {
     allProducts: "All Products",
@@ -575,6 +577,7 @@ const uk: Messages = {
     loadFail: "Не вдалося завантажити товари. Перевір, чи запущений бекенд.",
     tryAgain: "Спробувати ще раз",
     noProductsFound: "Товари не знайдено",
+    seeAll: "Переглянути всі",
   },
   products: {
     ...en.products,
