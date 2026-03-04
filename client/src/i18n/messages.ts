@@ -72,6 +72,12 @@ export type Messages = {
     loading: string;
     loadFail: string;
     noProducts: string;
+    categories: string;
+    allCategories: string;
+    brands: string;
+    priceRange: string;
+    clearFilters: string;
+    sortBy: string;
   };
   product: {
     notFound: string;
@@ -326,6 +332,12 @@ const en: Messages = {
     loading: "Loading products...",
     loadFail: "Failed to load products",
     noProducts: "No products found.",
+    categories: "Categories",
+    allCategories: "All Categories",
+    brands: "Brands",
+    priceRange: "Price Range",
+    clearFilters: "Clear Filters",
+    sortBy: "Sort By",
   },
   product: {
     notFound: "Product Not Found",
@@ -586,6 +598,12 @@ const uk: Messages = {
     loading: "Завантаження товарів...",
     loadFail: "Не вдалося завантажити товари",
     noProducts: "Товари не знайдено.",
+    categories: "Категорії",
+    allCategories: "Всі категорії",
+    brands: "Бренди",
+    priceRange: "Ціновий діапазон",
+    clearFilters: "Очистити фільтри",
+    sortBy: "Сортувати за",
   },
   product: {
     ...en.product,

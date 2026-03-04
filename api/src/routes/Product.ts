@@ -30,27 +30,18 @@ productRoute.get(
   validateQuery(productListQuerySchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const {
-      pageSize,
-      pageNumber,
+      pageSize = 8,
+      pageNumber = 1,
       keyword,
       brand,
       category,
       minPrice,
       maxPrice,
       sort,
-    } = req.query as {
-      pageSize?: string;
-      pageNumber?: string;
-      keyword?: string;
-      brand?: string;
-      category?: string;
-      minPrice?: string;
-      maxPrice?: string;
-      sort?: string;
-    };
+    } = req.query as any;
 
-    const limit = pageSize ? Number(pageSize) : 8;
-    const page = pageNumber ? Number(pageNumber) : 1;
+    const limit = Number(pageSize);
+    const page = Number(pageNumber);
 
     const filter: any = {};
 
@@ -59,9 +50,9 @@ productRoute.get(
       filter.name = { $regex: keyword, $options: "i" };
     }
 
-    // Brand filter (Apple,Samsung)
+    // Brand filter
     if (brand) {
-      filter.brand = { $in: brand.split(",") };
+      filter.brand = { $in: (brand as string).split(",") };
     }
 
     // Category filter
@@ -69,16 +60,15 @@ productRoute.get(
       filter.category = category;
     }
 
-    // Price range
-    if (minPrice || maxPrice) {
-      filter.price = {
-        ...(minPrice && { $gte: Number(minPrice) }),
-        ...(maxPrice && { $lte: Number(maxPrice) }),
-      };
+    // Price
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter.price = {};
+      if (minPrice !== undefined) filter.price.$gte = Number(minPrice);
+      if (maxPrice !== undefined) filter.price.$lte = Number(maxPrice);
     }
 
-    // Sorting
-    let sortOption: any = { createdAt: -1 }; // default: newest
+    // Sort (newest)
+    let sortOption: any = { createdAt: -1 };
 
     if (sort) {
       switch (sort) {
@@ -94,11 +84,12 @@ productRoute.get(
         case "name_asc":
           sortOption = { name: 1 };
           break;
+        default:
+          sortOption = { createdAt: -1 };
       }
     }
 
     const count = await Product.countDocuments(filter);
-
     const products = await Product.find(filter)
       .sort(sortOption)
       .limit(limit)
@@ -114,20 +105,16 @@ productRoute.get(
 );
 
 /* ======================================================
-   @desc   Get product filter metadata
+   @desc   Get product filter metadata (unique values for UI)
    @route  GET /api/products/filters
    @access Public
 ====================================================== */
 productRoute.get(
   "/filters",
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    // Get all unique brands
     const brands = await Product.distinct("brand");
-
-    // Get all unique categories
     const categories = await Product.distinct("category");
 
-    // Get min & max price
     const priceStats = await Product.aggregate([
       {
         $group: {
@@ -236,10 +223,7 @@ productRoute.put(
       throw new Error("Product not found");
     }
 
-    Object.assign(product, {
-      ...product.toObject(),
-      ...req.body,
-    });
+    Object.assign(product, req.body);
 
     const updatedProduct = await product.save();
     res.json(updatedProduct);
@@ -325,11 +309,7 @@ productRoute.delete(
   admin,
   validateParams(productReviewParamsSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { id, reviewId } = req.params as {
-      id: string;
-      reviewId: string;
-    };
-
+    const { id, reviewId } = req.params as { id: string; reviewId: string };
     const product = await Product.findById(id);
 
     if (!product) {
@@ -356,7 +336,6 @@ productRoute.delete(
           product.reviews.length;
 
     await product.save();
-
     res.json({ message: "Review removed" });
   }),
 );

@@ -31,11 +31,34 @@ export const getProducts = async (
   keyword = "",
   pageNumber = 1,
   pageSize = 8,
+  // Add a filter object
+  filters?: {
+    category?: string;
+    brand?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    sort?: string;
+  },
 ) => {
-  const { data } = await axiosInstance.get(
-    `/api/products?keyword=${keyword}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
-  );
+  // Using URLSearchParams for clean query construction
+  const params = new URLSearchParams({
+    keyword,
+    pageNumber: String(pageNumber),
+    pageSize: String(pageSize),
+  });
 
+  // Add filters only if they exist
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.brand) params.set("brand", filters.brand);
+  if (filters?.minPrice !== undefined)
+    params.set("minPrice", String(filters.minPrice));
+  if (filters?.maxPrice !== undefined)
+    params.set("maxPrice", String(filters.maxPrice));
+  if (filters?.sort) params.set("sort", filters.sort);
+
+  const { data } = await axiosInstance.get(
+    `/api/products?${params.toString()}`,
+  );
   return data;
 };
 

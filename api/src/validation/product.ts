@@ -10,11 +10,30 @@ export const productReviewParamsSchema = z.object({
   reviewId: objectIdSchema,
 });
 
-export const productListQuerySchema = z.object({
-  pageSize: z.coerce.number().int().positive().max(100).optional(),
-  pageNumber: z.coerce.number().int().positive().optional(),
-  keyword: z.string().trim().max(200).optional(),
-});
+export const productListQuerySchema = z
+  .object({
+    pageSize: z.coerce.number().int().positive().max(100).optional(),
+    pageNumber: z.coerce.number().int().positive().optional(),
+    keyword: z.string().trim().max(200).optional(),
+    brand: z.string().trim().max(500).optional(),
+    category: z.string().trim().max(100).optional(),
+    minPrice: z.coerce.number().min(0).optional(),
+    maxPrice: z.coerce.number().min(0).optional(),
+
+    sort: z
+      .enum(["newest", "price_asc", "price_desc", "rating_desc", "name_asc"])
+      .optional(),
+  })
+  .refine(
+    (data) =>
+      data.minPrice == null ||
+      data.maxPrice == null ||
+      data.maxPrice >= data.minPrice,
+    {
+      message: "maxPrice must be greater than or equal to minPrice",
+      path: ["maxPrice"],
+    },
+  );
 
 export const createProductSchema = z.object({
   name: z.string().trim().min(2).max(300),

@@ -14,9 +14,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
 export const fetchProducts = async (params: ProductQueryParams) => {
   const query = new URLSearchParams();
 
-  Object.entries(params).forEach(([Key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query.append(Key, String(value));
+  Object.entries(params).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== "" &&
+      typeof value !== "object"
+    ) {
+      query.append(key, String(value));
     }
   });
 
