@@ -32,7 +32,7 @@ interface ProductFiltersState {
 
 export const useProductFilters = create<ProductFiltersState>((set) => ({
   pageNumber: 1,
-  pageSize: 8,
+  pageSize: 9,
   category: "",
   brand: "",
   minPrice: undefined,
@@ -67,7 +67,7 @@ export const useProductFilters = create<ProductFiltersState>((set) => ({
   resetFilters: () =>
     set({
       pageNumber: 1,
-      pageSize: 8,
+      pageSize: 9,
       category: "",
       brand: "",
       minPrice: undefined,
