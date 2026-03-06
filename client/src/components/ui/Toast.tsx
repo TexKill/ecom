@@ -30,7 +30,7 @@ export default function Toast({
 
   return (
     <div
-      className={`fixed right-4 top-4 z-[70] max-w-sm rounded-md border px-4 py-3 text-sm shadow-lg ${typeStyles[type]}`}
+      className={`fixed right-4 top-4 z-70 max-w-sm rounded-md border px-4 py-3 text-sm shadow-lg ${typeStyles[type]}`}
     >
       {message}
     </div>
