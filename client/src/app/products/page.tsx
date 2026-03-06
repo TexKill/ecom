@@ -18,7 +18,6 @@ function ProductsContent() {
   const { pageNumber, setPage, sort, setSort, setPageSize } =
     useProductFilters();
 
-  // Автоматично встановлюємо pageSize залежно від розміру екрану
   useEffect(() => {
     const update = () => {
       const isMobile = window.innerWidth < 768;
@@ -37,12 +36,12 @@ function ProductsContent() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Бокова панель з фільтрами */}
+        {/* Sidebar with filters */}
         <aside className="w-full md:w-64 shrink-0">
           <FiltersSidebar />
         </aside>
 
-        {/* Основний контент з товарами */}
+        {/* General content */}
         <div className="flex-1">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">
@@ -51,17 +50,17 @@ function ProductsContent() {
                 : t.products.allProducts}
             </h1>
 
-            {/* Сортування */}
+            {/* Sort */}
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortOption)}
               className="border border-gray-200 rounded px-2 py-1 text-sm bg-white outline-none focus:border-red-500 transition-colors cursor-pointer"
             >
-              <option value="newest">Newest</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-              <option value="rating_desc">Top Rated</option>
-              <option value="name_asc">Name: A-Z</option>
+              <option value="newest">{t.products.newest}</option>
+              <option value="price_asc">{t.products.price_asc}</option>
+              <option value="price_desc">{t.products.price_desc}</option>
+              <option value="rating_desc">{t.products.rating_desc}</option>
+              <option value="name_asc">{t.products.name_asc}</option>
             </select>
           </div>
 
@@ -90,14 +89,14 @@ function ProductsContent() {
 
           {!isLoading && !error && products.length > 0 && (
             <>
-              {/* Сітка товарів */}
+              {/* Products */}
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product: IProduct) => (
                   <ProductCard key={product._id} product={product} />
                 ))}
               </div>
 
-              {/* Пагінація */}
+              {/* Pagination */}
               <div className="mt-10 border-t pt-8">
                 <Pagination
                   currentPage={pageNumber}

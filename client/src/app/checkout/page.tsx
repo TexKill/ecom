@@ -25,7 +25,8 @@ export default function CheckoutPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
-  const { items, shippingAddress, saveShippingAddress, clearCart } = useCartStore();
+  const { items, shippingAddress, saveShippingAddress, clearCart } =
+    useCartStore();
 
   const savedAddressParts = shippingAddress.address
     ? shippingAddress.address.split(",").map((part) => part.trim())
@@ -38,16 +39,22 @@ export default function CheckoutPage() {
   const [streetAddress, setStreetAddress] = useState(savedStreetAddress);
   const [apartment, setApartment] = useState(savedApartment);
   const [townCity, setTownCity] = useState(shippingAddress.city || "");
-  const [phoneNumber, setPhoneNumber] = useState(shippingAddress.phoneNumber || "");
+  const [phoneNumber, setPhoneNumber] = useState(
+    shippingAddress.phoneNumber || "",
+  );
   const [emailAddress, setEmailAddress] = useState(user?.email || "");
-  const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || "");
+  const [postalCode, setPostalCode] = useState(
+    shippingAddress.postalCode || "",
+  );
   const [country, setCountry] = useState(shippingAddress.country || "");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
   const [couponCode, setCouponCode] = useState("");
   const [saveInfo, setSaveInfo] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<RequiredField, boolean>>({
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<RequiredField, boolean>
+  >({
     firstName: false,
     lastName: false,
     streetAddress: false,
@@ -83,7 +90,15 @@ export default function CheckoutPage() {
     if (!emailAddress && user.email) {
       setEmailAddress(user.email);
     }
-  }, [hasHydrated, user, items.length, router, firstName, lastName, emailAddress]);
+  }, [
+    hasHydrated,
+    user,
+    items.length,
+    router,
+    firstName,
+    lastName,
+    emailAddress,
+  ]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -117,7 +132,8 @@ export default function CheckoutPage() {
       townCity: !townCity.trim(),
       phoneNumber: !phoneNumber.trim(),
       emailAddress:
-        !emailAddress.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim()),
+        !emailAddress.trim() ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim()),
       postalCode: !postalCode.trim(),
       country: !country.trim(),
     };
@@ -204,7 +220,9 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.auth.firstName}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.auth.firstName}*
+              </span>
               <input
                 type="text"
                 className={getInputClass("firstName")}
@@ -220,7 +238,9 @@ export default function CheckoutPage() {
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.auth.lastName}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.auth.lastName}*
+              </span>
               <input
                 type="text"
                 className={getInputClass("lastName")}
@@ -236,7 +256,9 @@ export default function CheckoutPage() {
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.checkout.streetAddress}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.checkout.streetAddress}*
+              </span>
               <input
                 type="text"
                 className={getInputClass("streetAddress")}
@@ -244,27 +266,34 @@ export default function CheckoutPage() {
                 onChange={(e) => {
                   setStreetAddress(e.target.value);
                   if (fieldErrors.streetAddress && e.target.value.trim()) {
-                    setFieldErrors((prev) => ({ ...prev, streetAddress: false }));
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      streetAddress: false,
+                    }));
                   }
                 }}
-                placeholder="15 Soniachna St"
+                placeholder={t.checkout.streetAddressPlaceholder}
                 required
               />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.checkout.apartment}</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.checkout.apartment}
+              </span>
               <input
                 type="text"
                 className="w-full rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
                 value={apartment}
                 onChange={(e) => setApartment(e.target.value)}
-                placeholder="Apt. 24"
+                placeholder={t.checkout.apartmentPlaceholder}
               />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.checkout.townCity}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.checkout.townCity}*
+              </span>
               <input
                 type="text"
                 className={getInputClass("townCity")}
@@ -275,15 +304,18 @@ export default function CheckoutPage() {
                     setFieldErrors((prev) => ({ ...prev, townCity: false }));
                   }
                 }}
-                placeholder="Kyiv"
+                placeholder={t.checkout.townCityPlaceholder}
                 required
               />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.checkout.phoneNumber}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.checkout.phoneNumber}*
+              </span>
               <input
                 type="tel"
+                placeholder="+380 44 123 4567"
                 className={getInputClass("phoneNumber")}
                 value={phoneNumber}
                 onChange={(e) => {
@@ -297,7 +329,9 @@ export default function CheckoutPage() {
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-sm text-gray-500">{t.checkout.emailAddress}*</span>
+              <span className="mb-1 block text-sm text-gray-500">
+                {t.checkout.emailAddress}*
+              </span>
               <input
                 type="email"
                 className={getInputClass("emailAddress")}
@@ -309,7 +343,10 @@ export default function CheckoutPage() {
                     fieldErrors.emailAddress &&
                     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
                   ) {
-                    setFieldErrors((prev) => ({ ...prev, emailAddress: false }));
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      emailAddress: false,
+                    }));
                   }
                 }}
                 required
@@ -318,7 +355,9 @@ export default function CheckoutPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1 block text-sm text-gray-500">{t.checkout.postalCode}*</span>
+                <span className="mb-1 block text-sm text-gray-500">
+                  {t.checkout.postalCode}*
+                </span>
                 <input
                   type="text"
                   className={getInputClass("postalCode")}
@@ -326,7 +365,10 @@ export default function CheckoutPage() {
                   onChange={(e) => {
                     setPostalCode(e.target.value);
                     if (fieldErrors.postalCode && e.target.value.trim()) {
-                      setFieldErrors((prev) => ({ ...prev, postalCode: false }));
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        postalCode: false,
+                      }));
                     }
                   }}
                   placeholder="03150"
@@ -334,7 +376,9 @@ export default function CheckoutPage() {
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-sm text-gray-500">{t.checkout.country}*</span>
+                <span className="mb-1 block text-sm text-gray-500">
+                  {t.checkout.country}*
+                </span>
                 <input
                   type="text"
                   className={getInputClass("country")}
@@ -345,7 +389,7 @@ export default function CheckoutPage() {
                       setFieldErrors((prev) => ({ ...prev, country: false }));
                     }
                   }}
-                  placeholder="Ukraine"
+                  placeholder={t.checkout.countryPlaceholder}
                   required
                 />
               </label>
@@ -366,7 +410,10 @@ export default function CheckoutPage() {
         <section className="lg:pl-10">
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item._id} className="flex items-center justify-between gap-4">
+              <div
+                key={item._id}
+                className="flex items-center justify-between gap-4"
+              >
                 <div className="flex items-center gap-3">
                   <div className="relative h-12 w-12 overflow-hidden rounded bg-gray-100">
                     <Image
@@ -377,10 +424,13 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <p className="text-sm text-gray-800">
-                    {item.name} <span className="text-gray-500">x {item.qty}</span>
+                    {item.name}{" "}
+                    <span className="text-gray-500">x {item.qty}</span>
                   </p>
                 </div>
-                <p className="text-sm font-medium">₴{(item.price * item.qty).toFixed(2)}</p>
+                <p className="text-sm font-medium">
+                  ₴{(item.price * item.qty).toFixed(2)}
+                </p>
               </div>
             ))}
           </div>
@@ -392,7 +442,11 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between border-b border-gray-200 pb-3">
               <span>{t.checkout.shipping}:</span>
-              <span>{shippingPrice === 0 ? t.checkout.free : `₴${shippingPrice.toFixed(2)}`}</span>
+              <span>
+                {shippingPrice === 0
+                  ? t.checkout.free
+                  : `₴${shippingPrice.toFixed(2)}`}
+              </span>
             </div>
             <div className="flex justify-between font-semibold">
               <span>{t.checkout.total}:</span>
@@ -462,4 +516,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

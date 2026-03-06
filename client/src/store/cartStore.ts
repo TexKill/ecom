@@ -103,9 +103,11 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQty: (id, qty, token) => {
-        const newItems = get().items.map((i) =>
-          i._id === id ? { ...i, qty } : i,
-        );
+        const newItems = get().items.map((i) => {
+          if (i._id !== id) return i;
+          const safeQty = Math.max(1, Math.min(i.countInStock, qty));
+          return { ...i, qty: safeQty };
+        });
         set({ items: newItems });
         syncCartToServer(newItems, token);
       },

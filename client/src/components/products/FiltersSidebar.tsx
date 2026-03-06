@@ -25,7 +25,6 @@ export default function FiltersSidebar() {
     priceRange: { min: number; max: number };
   } | null>(null);
 
-  // Контролює видимість панелі на мобільних
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -35,13 +34,11 @@ export default function FiltersSidebar() {
   }, []);
 
   const activeBrands = brand ? brand.split(",") : [];
-
-  // Чи є активні фільтри (для бейджика на кнопці)
   const hasActiveFilters = Boolean(category || brand || minPrice || maxPrice);
 
   return (
     <>
-      {/* КНОПКА — видима тільки на мобільних */}
+      {/* Only mobile button */}
       <button
         onClick={() => setMobileOpen(true)}
         className="md:hidden flex items-center gap-2 w-full border border-gray-200 rounded-lg px-4 py-3 text-sm font-medium bg-white mb-4"
@@ -55,7 +52,7 @@ export default function FiltersSidebar() {
         )}
       </button>
 
-      {/* OVERLAY — затемнення фону на мобільних */}
+      {/* OVERLAY */}
       {mobileOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black/40 z-40"
@@ -63,19 +60,17 @@ export default function FiltersSidebar() {
         />
       )}
 
-      {/* ПАНЕЛЬ ФІЛЬТРІВ */}
+      {/* Filters panel */}
       <div
         className={`
-          // Мобільна версія: виїжджає знизу
           fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl
           transition-transform duration-300 ease-in-out
           ${mobileOpen ? "translate-y-0" : "translate-y-full"}
-          
-          // Десктопна версія: завжди видима, статична позиція
+
           md:static md:translate-y-0 md:shadow-none md:rounded-none md:z-auto md:bg-transparent
         `}
       >
-        {/* Заголовок панелі */}
+        {/* Panel title */}
         <div className="flex items-center justify-between p-4 border-b md:hidden">
           <span className="font-bold text-base">Filters</span>
           <button onClick={() => setMobileOpen(false)}>
@@ -83,9 +78,9 @@ export default function FiltersSidebar() {
           </button>
         </div>
 
-        {/* Контент фільтрів (скролиться на мобільних) */}
+        {/* Filter content (scrollable on mobile devices) */}
         <div className="p-4 md:p-0 max-h-[70vh] md:max-h-none overflow-y-auto space-y-8">
-          {/* КАТЕГОРІЇ */}
+          {/* Categories */}
           <div>
             <h3 className="font-bold text-xs uppercase tracking-wider mb-3 text-gray-400">
               {t.products.categories}
@@ -117,7 +112,7 @@ export default function FiltersSidebar() {
             </div>
           </div>
 
-          {/* БРЕНДИ */}
+          {/* Brands */}
           <div>
             <h3 className="font-bold text-xs uppercase tracking-wider mb-3 text-gray-400">
               {t.products.brands}
@@ -148,7 +143,7 @@ export default function FiltersSidebar() {
             </div>
           </div>
 
-          {/* ЦІНА */}
+          {/* Price */}
           <div>
             <h3 className="font-bold text-xs uppercase tracking-wider mb-3 text-gray-400">
               {t.products.priceRange}
@@ -187,7 +182,7 @@ export default function FiltersSidebar() {
             )}
           </div>
 
-          {/* КНОПКА ОЧИЩЕННЯ */}
+          {/* Clear */}
           <button
             onClick={() => {
               resetFilters();

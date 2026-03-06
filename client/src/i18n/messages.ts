@@ -78,6 +78,11 @@ export type Messages = {
     priceRange: string;
     clearFilters: string;
     sortBy: string;
+    newest: string;
+    price_asc: string;
+    price_desc: string;
+    rating_desc: string;
+    name_asc: string;
   };
   product: {
     notFound: string;
@@ -142,6 +147,15 @@ export type Messages = {
     dateUnavailable: string;
     paid: string;
     pending: string;
+    status: string;
+    statusPending: string;
+    statusProcessing: string;
+    statusShipped: string;
+    statusDelivered: string;
+    statusCancelled: string;
+    paymentStatus: string;
+    deliveryStatus: string;
+    unpaid: string;
   };
   account: {
     title: string;
@@ -185,6 +199,10 @@ export type Messages = {
     couponEnter: string;
     couponNext: string;
     orderFail: string;
+    streetAddressPlaceholder: string;
+    apartmentPlaceholder: string;
+    townCityPlaceholder: string;
+    countryPlaceholder: string;
   };
   admin: {
     title: string;
@@ -338,6 +356,11 @@ const en: Messages = {
     priceRange: "Price Range",
     clearFilters: "Clear Filters",
     sortBy: "Sort By",
+    newest: "Newest",
+    price_asc: "Price: Low to High",
+    price_desc: "Price: High to Low",
+    rating_desc: "Top Rated",
+    name_asc: "Name: A-Z",
   },
   product: {
     notFound: "Product Not Found",
@@ -402,6 +425,15 @@ const en: Messages = {
     dateUnavailable: "Date unavailable",
     paid: "Paid",
     pending: "Pending",
+    status: "Status",
+    statusPending: "Pending",
+    statusProcessing: "Processing",
+    statusShipped: "Shipped",
+    statusDelivered: "Delivered",
+    statusCancelled: "Cancelled",
+    paymentStatus: "Payment",
+    deliveryStatus: "Delivery",
+    unpaid: "Unpaid",
   },
   account: {
     title: "My Account",
@@ -444,8 +476,12 @@ const en: Messages = {
     needEdit: "Need to edit cart?",
     goBackToCart: "Go back to cart",
     couponEnter: "Enter coupon code first.",
-    couponNext: "Coupon feature will be enabled in next iteration.",
+    couponNext: "Coming soon...",
     orderFail: "Failed to place order. Please check fields and try again.",
+    streetAddressPlaceholder: "15 Soniachna St",
+    apartmentPlaceholder: "Apt. 24",
+    townCityPlaceholder: "Kyiv",
+    countryPlaceholder: "Ukraine",
   },
   admin: {
     title: "Admin Dashboard",
@@ -604,6 +640,11 @@ const uk: Messages = {
     priceRange: "Ціновий діапазон",
     clearFilters: "Очистити фільтри",
     sortBy: "Сортувати за",
+    newest: "Новітні",
+    price_asc: "Ціна: від низької до високої",
+    price_desc: "Ціна: від високої до низької",
+    rating_desc: "Найкращі за рейтингом",
+    name_asc: "Назва: від А до Я",
   },
   product: {
     ...en.product,
@@ -671,6 +712,15 @@ const uk: Messages = {
     dateUnavailable: "Дата недоступна",
     paid: "Оплачено",
     pending: "В очікуванні",
+    status: "Статус",
+    statusPending: "В очікуванні",
+    statusProcessing: "В обробці",
+    statusShipped: "Відправлено",
+    statusDelivered: "Доставлено",
+    statusCancelled: "Скасовано",
+    paymentStatus: "Статус оплати",
+    deliveryStatus: "Статус доставки",
+    unpaid: "Не оплачено",
   },
   account: {
     ...en.account,
@@ -715,9 +765,13 @@ const uk: Messages = {
       "\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u043e \u0437\u043c\u0456\u043d\u0438\u0442\u0438 \u043a\u043e\u0448\u0438\u043a?",
     goBackToCart: "Повернутись у кошик",
     couponEnter: "Спочатку введіть код купона.",
-    couponNext: "Функцію купонів буде додано в наступній ітерації.",
+    couponNext: "В розробці...",
     orderFail:
       "Не вдалося оформити замовлення. Перевірте поля та спробуйте ще раз.",
+    streetAddressPlaceholder: "вул. Сонячна, 15",
+    apartmentPlaceholder: "Кв. 24",
+    townCityPlaceholder: "Київ",
+    countryPlaceholder: "Україна",
   },
   admin: {
     ...en.admin,

@@ -1,5 +1,12 @@
 import { Document, Types } from "mongoose";
 
+export type OrderStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
 export interface ICartItem {
   productId: Types.ObjectId;
   name: string;
@@ -83,4 +90,5 @@ export interface IOrder extends Document {
   paidAt?: Date;
   isDelivered: boolean;
   deliveredAt?: Date;
+  status: OrderStatus;
 }

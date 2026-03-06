@@ -17,6 +17,7 @@ import {
   productListQuerySchema,
   updateProductSchema,
 } from "../validation/product";
+import { restockProductsRandom } from "../utils/autoRestock";
 
 const productRoute = express.Router();
 
@@ -250,6 +251,24 @@ productRoute.delete(
 
     await product.deleteOne();
     res.json({ message: "Product removed" });
+  }),
+);
+
+/* ======================================================
+   @desc   Random restock all products (1..100)
+   @route  POST /api/products/restock-random
+   @access Admin
+====================================================== */
+productRoute.post(
+  "/restock-random",
+  protect,
+  admin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const updatedCount = await restockProductsRandom();
+    res.json({
+      message: `Random restock complete: ${updatedCount} products updated`,
+      updatedCount,
+    });
   }),
 );
 

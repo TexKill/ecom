@@ -10,14 +10,17 @@ import {
   getProducts,
   markOrderDelivered,
   ProductPayload,
+  restockProductsRandom,
   uploadProductImage,
+  updateOrderStatus,
   updateProduct,
 } from "@/lib/api";
-import { IOrder, IProduct, IUser } from "@/types";
+import { IOrder, IProduct, IUser, OrderStatus } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import Pagination from "@/components/ui/Pagination";
+import { getOrderStatusMeta } from "@/lib/orderStatus";
 
 const emptyForm: ProductPayload = {
   name: "",
@@ -43,11 +46,13 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [restocking, setRestocking] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotalPages, setOrderTotalPages] = useState(1);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductPayload>(emptyForm);
@@ -206,6 +211,33 @@ export default function AdminPage() {
     }
   };
 
+  const handleStatusChange = async (id: string, status: OrderStatus) => {
+    try {
+      setStatusUpdatingId(id);
+      const updated = await updateOrderStatus(id, status);
+      setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
+    } catch {
+      setError(t.admin.deliverFail);
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
+  const handleRandomRestock = async () => {
+    try {
+      setRestocking(true);
+      setError("");
+      await restockProductsRandom();
+      const productsRes = await getProducts("", page, 15);
+      setProducts(productsRes.products);
+      setTotalPages(productsRes.pages);
+    } catch {
+      setError("Failed to restock products");
+    } finally {
+      setRestocking(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <Breadcrumbs
@@ -219,6 +251,15 @@ export default function AdminPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t.admin.title}</h1>
         <div className="flex gap-2">
+          {tab === "products" && (
+            <button
+              onClick={handleRandomRestock}
+              disabled={restocking}
+              className="rounded border border-gray-300 px-4 py-2 text-sm hover:border-black disabled:opacity-60"
+            >
+              {restocking ? "Restock..." : "Restock 1-100"}
+            </button>
+          )}
           <button
             onClick={() => setTab("products")}
             className={`rounded px-4 py-2 text-sm ${tab === "products" ? "bg-black text-white" : "bg-gray-100"}`}
@@ -496,6 +537,7 @@ export default function AdminPage() {
                       <th className="px-3 py-2 text-left">
                         {t.admin.delivered}
                       </th>
+                      <th className="px-3 py-2 text-left">{t.orders.status}</th>
                       <th className="px-3 py-2 text-left">{t.admin.actions}</th>
                     </tr>
                   </thead>
@@ -506,6 +548,7 @@ export default function AdminPage() {
                         typeof orderUser === "string"
                           ? orderUser.slice(-6)
                           : `${orderUser.name} (${orderUser.email})`;
+                      const statusMeta = getOrderStatusMeta(order.status, t.orders);
                       return (
                         <tr key={order._id} className="border-t">
                           <td className="px-3 py-2">{order._id.slice(-8)}</td>
@@ -518,6 +561,29 @@ export default function AdminPage() {
                           </td>
                           <td className="px-3 py-2">
                             {order.isDelivered ? t.admin.yes : t.admin.no}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-col gap-2">
+                              <span
+                                className={`inline-flex w-fit rounded-full border px-2 py-0.5 text-xs font-medium ${statusMeta.badgeClass}`}
+                              >
+                                {statusMeta.label}
+                              </span>
+                              <select
+                                value={order.status || "pending"}
+                                onChange={(e) =>
+                                  handleStatusChange(order._id, e.target.value as OrderStatus)
+                                }
+                                disabled={statusUpdatingId === order._id}
+                                className="rounded border border-gray-300 px-2 py-1 text-xs"
+                              >
+                                <option value="pending">{t.orders.statusPending}</option>
+                                <option value="processing">{t.orders.statusProcessing}</option>
+                                <option value="shipped">{t.orders.statusShipped}</option>
+                                <option value="delivered">{t.orders.statusDelivered}</option>
+                                <option value="cancelled">{t.orders.statusCancelled}</option>
+                              </select>
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex gap-2">

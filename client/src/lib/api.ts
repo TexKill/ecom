@@ -1,5 +1,5 @@
 import axiosInstance from "./axios";
-import { IProduct, IUser, IOrder } from "../types";
+import { IProduct, IUser, IOrder, OrderStatus } from "../types";
 
 export const loginUser = async (email: string, password: string) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
@@ -116,6 +116,13 @@ export const markOrderDelivered = async (id: string) => {
   return data;
 };
 
+export const updateOrderStatus = async (id: string, status: OrderStatus) => {
+  const { data } = await axiosInstance.put<IOrder>(`/api/orders/${id}/status`, {
+    status,
+  });
+  return data;
+};
+
 export const deleteOrder = async (id: string) => {
   const { data } = await axiosInstance.delete<{ message: string }>(
     `/api/orders/${id}`,
@@ -156,6 +163,14 @@ export const deleteProduct = async (id: string) => {
   const { data } = await axiosInstance.delete<{ message: string }>(
     `/api/products/${id}`,
   );
+  return data;
+};
+
+export const restockProductsRandom = async () => {
+  const { data } = await axiosInstance.post<{
+    message: string;
+    updatedCount: number;
+  }>("/api/products/restock-random");
   return data;
 };
 

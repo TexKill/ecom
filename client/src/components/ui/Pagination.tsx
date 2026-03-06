@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -17,9 +19,9 @@ export default function Pagination({
       <button
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
-        className="px-3 py-1 border rounded disabled:opacity-40"
+        className="px-2 py-1 border rounded disabled:opacity-40"
       >
-        Prev
+        <ChevronLeft />
       </button>
 
       {/* Pages */}
@@ -45,9 +47,9 @@ export default function Pagination({
       <button
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        className="px-3 py-1 border rounded disabled:opacity-40"
+        className="px-2 py-1 border rounded disabled:opacity-40"
       >
-        Next
+        <ChevronRight />
       </button>
     </div>
   );

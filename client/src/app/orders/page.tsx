@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMyOrders } from "@/lib/api";
+import { getOrderStatusMeta } from "@/lib/orderStatus";
 import { IOrder } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
@@ -64,29 +66,41 @@ export default function OrdersPage() {
 
       {!loading && !error && orders.length > 0 && (
         <div className="space-y-3">
-          {orders.map((order) => (
-            <div
-              key={order._id}
-              className="rounded-lg border border-gray-200 p-4 flex items-center justify-between"
-            >
-              <div>
-                <p className="font-medium">{t.orders.order} #{order._id.slice(-8)}</p>
-                <p className="text-sm text-gray-500">
-                  {order.createdAt
-                    ? new Date(order.createdAt).toLocaleString(
-                        lang === "uk" ? "uk-UA" : "en-US",
-                      )
-                    : t.orders.dateUnavailable}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold">₴{order.totalPrice.toFixed(2)}</p>
-                <p className={`text-sm ${order.isPaid ? "text-green-600" : "text-amber-600"}`}>
-                  {order.isPaid ? t.orders.paid : t.orders.pending}
-                </p>
-              </div>
-            </div>
-          ))}
+          {orders.map((order) => {
+            const status = getOrderStatusMeta(order.status, t.orders);
+            return (
+              <Link
+                key={order._id}
+                href={`/orders/${order._id}`}
+                className="block rounded-lg border border-gray-200 p-4 transition-colors hover:border-black"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{t.orders.order} #{order._id.slice(-8)}</p>
+                    <p className="text-sm text-gray-500">
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleString(
+                            lang === "uk" ? "uk-UA" : "en-US",
+                          )
+                        : t.orders.dateUnavailable}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{"\u20B4"}{order.totalPrice.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">{t.orders.paymentStatus}</p>
+                    <p className={`text-sm ${order.isPaid ? "text-green-600" : "text-amber-600"}`}>
+                      {order.isPaid ? t.orders.paid : t.orders.unpaid}
+                    </p>
+                    <span
+                      className={`mt-1 inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${status.badgeClass}`}
+                    >
+                      {status.label}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

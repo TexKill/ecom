@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,6 +18,26 @@ export default function CartPage() {
   const { items, removeItem, updateQty, clearCart, totalPrice, totalQty } =
     useCartStore();
   const user = useAuthStore((s) => s.user);
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const nextInputs: Record<string, string> = {};
+    items.forEach((item) => {
+      nextInputs[item._id] = String(item.qty);
+    });
+    setQtyInputs(nextInputs);
+  }, [items]);
+
+  const clampQty = (value: number, max: number) =>
+    Math.max(1, Math.min(max, value));
+
+  const commitQtyInput = (id: string, countInStock: number) => {
+    const raw = qtyInputs[id];
+    const parsed = Number.parseInt(raw, 10);
+    const safeQty = Number.isNaN(parsed) ? 1 : clampQty(parsed, countInStock);
+    updateQty(id, safeQty, user?.token || "");
+    setQtyInputs((prev) => ({ ...prev, [id]: String(safeQty) }));
+  };
 
   if (items.length === 0) {
     return (
@@ -100,15 +121,47 @@ export default function CartPage() {
                 <div className="mt-4 flex items-end justify-between">
                   <div className="flex items-center rounded-md border border-gray-200">
                     <button
-                      onClick={() => updateQty(item._id, item.qty - 1, user?.token || "")}
+                      onClick={() =>
+                        updateQty(
+                          item._id,
+                          clampQty(item.qty - 1, item.countInStock),
+                          user?.token || "",
+                        )
+                      }
                       className="p-2 text-gray-600 transition-colors hover:bg-gray-50"
                       disabled={item.qty <= 1}
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-12 text-center text-sm font-medium">{item.qty}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={item.countInStock}
+                      inputMode="numeric"
+                      className="w-12 bg-transparent text-center text-sm font-medium outline-none"
+                      value={qtyInputs[item._id] ?? String(item.qty)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          setQtyInputs((prev) => ({ ...prev, [item._id]: value }));
+                        }
+                      }}
+                      onBlur={() => commitQtyInput(item._id, item.countInStock)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      aria-label={`${t.cart.items} qty`}
+                    />
                     <button
-                      onClick={() => updateQty(item._id, item.qty + 1, user?.token || "")}
+                      onClick={() =>
+                        updateQty(
+                          item._id,
+                          clampQty(item.qty + 1, item.countInStock),
+                          user?.token || "",
+                        )
+                      }
                       className="p-2 text-gray-600 transition-colors hover:bg-gray-50"
                       disabled={item.qty >= item.countInStock}
                     >

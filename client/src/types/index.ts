@@ -48,6 +48,13 @@ export interface IOrderItem {
   product: string;
 }
 
+export type OrderStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
 export interface IOrder {
   _id: string;
   user: string | IUser;
@@ -66,5 +73,6 @@ export interface IOrder {
   paidAt?: string;
   isDelivered: boolean;
   deliveredAt?: string;
+  status: OrderStatus;
   createdAt?: string;
 }

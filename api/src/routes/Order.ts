@@ -11,6 +11,7 @@ import {
   createOrderSchema,
   orderIdParamSchema,
   payOrderSchema,
+  updateOrderStatusSchema,
 } from "../validation/order";
 
 const orderRoute = express.Router();
@@ -110,6 +111,7 @@ orderRoute.post(
       totalPrice,
       isPaid: false,
       isDelivered: false,
+      status: "pending",
     });
 
     const createdOrder = await order.save();
@@ -207,6 +209,9 @@ orderRoute.put(
 
       order.isPaid = true;
       order.paidAt = new Date();
+      if (order.status === "pending") {
+        order.status = "processing";
+      }
       order.paymentResult = {
         id: req.body.id,
         status: req.body.status,
@@ -237,6 +242,7 @@ orderRoute.put(
     if (order) {
       order.isDelivered = true;
       order.deliveredAt = new Date();
+      order.status = "delivered";
 
       const updatedOrder = await order.save();
       res.json(updatedOrder);
@@ -244,6 +250,42 @@ orderRoute.put(
       res.status(404);
       throw new Error("Order not found");
     }
+  }),
+);
+
+// @desc   Update order status
+// @route  PUT /api/orders/:id/status
+// @access Admin
+orderRoute.put(
+  "/:id/status",
+  protect,
+  admin,
+  validateParams(orderIdParamSchema),
+  validateBody(updateOrderStatusSchema),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      res.status(404);
+      throw new Error("Order not found");
+    }
+
+    const { status } = req.body as {
+      status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+    };
+
+    order.status = status;
+
+    if (status === "delivered") {
+      order.isDelivered = true;
+      order.deliveredAt = order.deliveredAt || new Date();
+    } else {
+      order.isDelivered = false;
+      order.deliveredAt = undefined;
+    }
+
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
   }),
 );
 

@@ -27,6 +27,10 @@ export const payOrderSchema = z.object({
   email_address: z.string().trim().email(),
 });
 
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled"]),
+});
+
 export const orderIdParamSchema = z.object({
   id: objectIdSchema,
 });
