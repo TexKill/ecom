@@ -1,12 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodError, ZodType } from "zod";
 
-const mapIssues = (error: ZodError) =>
-  error.issues.map((issue) => ({
-    field: issue.path.join("."),
-    message: issue.message,
-  }));
-
 const validator =
   <T>(schema: ZodType<T>, source: "body" | "params" | "query") =>
   (req: Request, res: Response, next: NextFunction) => {
@@ -16,11 +10,12 @@ const validator =
       if (source === "query") schema.parse(req.query);
       next();
     } catch (error) {
-      if (error instanceof ZodError) {
-        res.status(400).json({ message: "Validation failed", errors: mapIssues(error) });
-        return;
-      }
-      res.status(400).json({ message: `Invalid request ${source}` });
+      if (error instanceof ZodError) return next(error);
+      const validationError = new Error(`Invalid request ${source}`) as Error & {
+        statusCode?: number;
+      };
+      validationError.statusCode = 400;
+      next(validationError);
     }
   };
 

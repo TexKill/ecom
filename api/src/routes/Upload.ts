@@ -1,7 +1,11 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import asyncHandler from "express-async-handler";
+import { protect } from "../middleware/Auth";
+import { admin } from "../middleware/Admin";
+import { AuthRequest } from "../types/auth";
 
 const router = express.Router();
 
@@ -20,6 +24,22 @@ cloudinary.config({
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedMimeTypes = new Set([
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ]);
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      const error = new Error("Only JPG, JPEG, PNG, and WEBP images are allowed") as Error & {
+        statusCode?: number;
+      };
+      error.statusCode = 400;
+      return cb(error);
+    }
+    cb(null, true);
+  },
 });
 
 /* ================================
@@ -27,32 +47,39 @@ const upload = multer({
 ================================ */
 router.post(
   "/",
+  protect,
+  admin,
   upload.single("image"),
-  async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.file) {
+      res.status(400);
+      throw new Error("No file uploaded");
+    }
+    const file = req.file;
 
+    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: "ecom-products" },
-        (error, result) => {
-          if (error || !result) {
-            return res.status(500).json({ message: "Upload failed" });
+        {
+          folder: "ecom-products",
+          resource_type: "image",
+        },
+        (error, uploadedResult) => {
+          if (error || !uploadedResult) {
+            reject(error ?? new Error("Upload failed"));
+            return;
           }
-
-          return res.status(200).json({
-            message: "Upload successful",
-            url: result.secure_url,
-          });
+          resolve(uploadedResult as { secure_url: string });
         },
       );
 
-      streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-    } catch (error) {
-      return res.status(500).json({ message: "Server error" });
-    }
-  },
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    });
+
+    res.status(200).json({
+      message: "Upload successful",
+      url: result.secure_url,
+    });
+  }),
 );
 
 export default router;

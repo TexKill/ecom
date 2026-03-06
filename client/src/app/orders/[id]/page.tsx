@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import axios from "axios";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
-import { getOrderById } from "@/lib/api";
+import { createLiqPayCheckout, getOrderById } from "@/lib/api";
 import { getOrderStatusMeta } from "@/lib/orderStatus";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuthStore } from "@/store/authStore";
@@ -23,6 +24,7 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<IOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [startingPayment, setStartingPayment] = useState(false);
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -55,6 +57,47 @@ export default function OrderDetailsPage() {
 
   if (!hasHydrated || !user) return null;
   const statusMeta = order ? getOrderStatusMeta(order.status, t.orders) : null;
+  const paymentMethodLabel = order
+    ? order.paymentMethod === "bank_transfer"
+      ? t.checkout.bank
+      : order.paymentMethod === "cash_on_delivery"
+        ? t.checkout.cod
+        : order.paymentMethod
+    : "";
+
+  const handlePayWithLiqPay = async () => {
+    if (!order || startingPayment) return;
+    try {
+      setStartingPayment(true);
+      const checkout = await createLiqPayCheckout(order._id);
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = checkout.action;
+      form.acceptCharset = "utf-8";
+
+      const dataInput = document.createElement("input");
+      dataInput.type = "hidden";
+      dataInput.name = "data";
+      dataInput.value = checkout.data;
+
+      const signatureInput = document.createElement("input");
+      signatureInput.type = "hidden";
+      signatureInput.name = "signature";
+      signatureInput.value = checkout.signature;
+
+      form.appendChild(dataInput);
+      form.appendChild(signatureInput);
+      document.body.appendChild(form);
+      form.submit();
+    } catch (error) {
+      if (axios.isAxiosError<{ message?: string }>(error)) {
+        setError(error.response?.data?.message || t.orders.paymentInitFail);
+      } else {
+        setError(t.orders.paymentInitFail);
+      }
+      setStartingPayment(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -63,7 +106,11 @@ export default function OrderDetailsPage() {
           { label: t.header.home, href: "/" },
           { label: t.account.myAccount, href: "/account" },
           { label: t.orders.title, href: "/orders" },
-          { label: order ? `${t.orders.order} #${order._id.slice(-8)}` : t.orders.order },
+          {
+            label: order
+              ? `${t.orders.order} #${order._id.slice(-8)}`
+              : t.orders.order,
+          },
         ]}
       />
 
@@ -100,19 +147,26 @@ export default function OrderDetailsPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
               <section className="rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="mb-4 text-lg font-semibold">{t.checkout.shipping}</h2>
+                <h2 className="mb-4 text-lg font-semibold">
+                  {t.checkout.shipping}
+                </h2>
                 <div className="space-y-1 text-sm text-gray-700">
                   <p>{order.shippingAddress.address}</p>
                   <p>
-                    {order.shippingAddress.city}, {order.shippingAddress.postalCode}
+                    {order.shippingAddress.city},{" "}
+                    {order.shippingAddress.postalCode}
                   </p>
                   <p>{order.shippingAddress.country}</p>
-                  {order.shippingAddress.phoneNumber && <p>{order.shippingAddress.phoneNumber}</p>}
+                  {order.shippingAddress.phoneNumber && (
+                    <p>{order.shippingAddress.phoneNumber}</p>
+                  )}
                 </div>
               </section>
 
               <section className="rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="mb-4 text-lg font-semibold">{t.checkout.product}</h2>
+                <h2 className="mb-4 text-lg font-semibold">
+                  {t.checkout.product}
+                </h2>
                 <div className="space-y-4">
                   {order.orderItems.map((item) => (
                     <div
@@ -120,7 +174,7 @@ export default function OrderDetailsPage() {
                       className="flex items-center justify-between gap-3"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded border border-gray-200 bg-gray-50">
+                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-gray-200 bg-gray-50">
                           <Image
                             src={item.image || "/placeholder.png"}
                             alt={item.name}
@@ -141,7 +195,8 @@ export default function OrderDetailsPage() {
                       </div>
 
                       <p className="text-sm font-medium text-gray-800">
-                        {"\u20B4"}{(item.price * item.qty).toFixed(2)}
+                        {"\u20B4"}
+                        {(item.price * item.qty).toFixed(2)}
                       </p>
                     </div>
                   ))}
@@ -151,11 +206,16 @@ export default function OrderDetailsPage() {
 
             <aside className="h-fit space-y-4">
               <div className="rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="mb-4 text-lg font-semibold">{t.cart.orderSummary}</h2>
+                <h2 className="mb-4 text-lg font-semibold">
+                  {t.cart.orderSummary}
+                </h2>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span>{t.checkout.total}</span>
-                    <span className="font-semibold">{"\u20B4"}{order.totalPrice.toFixed(2)}</span>
+                    <span className="font-semibold">
+                      {"\u20B4"}
+                      {order.totalPrice.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t.checkout.shipping}</span>
@@ -167,24 +227,48 @@ export default function OrderDetailsPage() {
                   </div>
                   <div className="border-t border-gray-200 pt-2">
                     <p>
-                      {t.checkout.cod}: {order.paymentMethod}
+                      {t.checkout.paymentMethod}: {paymentMethodLabel}
                     </p>
                   </div>
+                  {!order.isPaid && order.paymentMethod === "bank_transfer" && (
+                    <button
+                      type="button"
+                      onClick={handlePayWithLiqPay}
+                      disabled={startingPayment}
+                      className="mt-3 w-full rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-60"
+                    >
+                      {startingPayment ? t.orders.paying : t.orders.payWithLiqPay}
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div className="rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h3 className="mb-4 text-lg font-semibold">{t.orders.status}</h3>
+                <h3 className="mb-4 text-lg font-semibold">
+                  {t.orders.status}
+                </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">{t.orders.paymentStatus}</span>
-                    <span className={order.isPaid ? "text-green-600" : "text-amber-600"}>
+                    <span className="text-gray-600">
+                      {t.orders.paymentStatus}
+                    </span>
+                    <span
+                      className={
+                        order.isPaid ? "text-green-600" : "text-amber-600"
+                      }
+                    >
                       {order.isPaid ? t.orders.paid : t.orders.unpaid}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t border-gray-200 pt-2">
-                    <span className="text-gray-600">{t.orders.deliveryStatus}</span>
-                    <span className={order.isDelivered ? "text-green-600" : "text-amber-600"}>
+                    <span className="text-gray-600">
+                      {t.orders.deliveryStatus}
+                    </span>
+                    <span
+                      className={
+                        order.isDelivered ? "text-green-600" : "text-amber-600"
+                      }
+                    >
                       {order.isDelivered ? t.admin.yes : t.admin.no}
                     </span>
                   </div>

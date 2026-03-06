@@ -13,8 +13,16 @@ import {
   payOrderSchema,
   updateOrderStatusSchema,
 } from "../validation/order";
+import {
+  decodeLiqPayPayload,
+  encodeLiqPayPayload,
+  isLiqPaySuccessStatus,
+  signLiqPayData,
+  verifyLiqPaySignature,
+} from "../utils/liqpay";
 
 const orderRoute = express.Router();
+const liqPayCheckoutUrl = "https://www.liqpay.ua/api/3/checkout";
 
 // @desc   Create new order
 // @route  POST /api/orders
@@ -156,6 +164,137 @@ orderRoute.get(
       page,
       pages: Math.ceil(count / pageSize),
     });
+  }),
+);
+
+// @desc   Create LiqPay checkout payload for order
+// @route  POST /api/orders/:id/liqpay/checkout
+// @access Private
+orderRoute.post(
+  "/:id/liqpay/checkout",
+  protect,
+  validateParams(orderIdParamSchema),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      res.status(404);
+      throw new Error("Order not found");
+    }
+
+    const isOwner = order.user.toString() === req.user?._id.toString();
+    const isAdmin = Boolean(req.user?.isAdmin);
+
+    if (!isOwner && !isAdmin) {
+      res.status(403);
+      throw new Error("Not authorized to pay this order");
+    }
+
+    if (order.isPaid) {
+      res.status(400);
+      throw new Error("Order is already paid");
+    }
+
+    if (order.paymentMethod !== "bank_transfer") {
+      res.status(400);
+      throw new Error("LiqPay is available only for bank transfer orders");
+    }
+
+    const publicKey = process.env.LIQPAY_PUBLIC_KEY;
+    const privateKey = process.env.LIQPAY_PRIVATE_KEY;
+    const apiPublicUrl = process.env.API_PUBLIC_URL || "http://localhost:9000";
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+
+    if (!publicKey || !privateKey) {
+      res.status(500);
+      throw new Error("LiqPay keys are not configured");
+    }
+
+    const payload = {
+      version: "3",
+      public_key: publicKey,
+      action: "pay",
+      amount: order.totalPrice.toFixed(2),
+      currency: "UAH",
+      description: `Order #${order._id.toString().slice(-8)}`,
+      order_id: order._id.toString(),
+      server_url: `${apiPublicUrl}/api/orders/liqpay/callback`,
+      result_url: `${clientUrl}/orders/${order._id.toString()}`,
+      language: "uk",
+      ...(process.env.LIQPAY_SANDBOX === "true" ? { sandbox: "1" } : {}),
+    };
+
+    const data = encodeLiqPayPayload(payload);
+    const signature = signLiqPayData(privateKey, data);
+
+    res.json({
+      action: liqPayCheckoutUrl,
+      data,
+      signature,
+    });
+  }),
+);
+
+// @desc   LiqPay callback
+// @route  POST /api/orders/liqpay/callback
+// @access Public
+orderRoute.post(
+  "/liqpay/callback",
+  express.urlencoded({ extended: false }),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const privateKey = process.env.LIQPAY_PRIVATE_KEY;
+    if (!privateKey) {
+      res.status(500);
+      throw new Error("LiqPay private key is not configured");
+    }
+
+    const data = String(req.body?.data || "");
+    const signature = String(req.body?.signature || "");
+
+    if (!data || !signature) {
+      res.status(400);
+      throw new Error("Invalid LiqPay callback payload");
+    }
+
+    if (!verifyLiqPaySignature(privateKey, data, signature)) {
+      res.status(400);
+      throw new Error("Invalid LiqPay signature");
+    }
+
+    const payload = decodeLiqPayPayload(data);
+    const orderId = String(payload.order_id || "");
+
+    if (!orderId) {
+      res.status(400);
+      throw new Error("LiqPay callback does not contain order_id");
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    const status = String(payload.status || "");
+    const transactionId = String(payload.transaction_id || payload.payment_id || "");
+
+    if (isLiqPaySuccessStatus(status) && !order.isPaid) {
+      order.isPaid = true;
+      order.paidAt = new Date();
+      if (order.status === "pending") {
+        order.status = "processing";
+      }
+    }
+
+    order.paymentResult = {
+      id: transactionId || order.paymentResult?.id || "",
+      status,
+      update_time: String(payload.end_date || Date.now()),
+      email_address: String(payload.sender || ""),
+    };
+
+    await order.save();
+    res.status(200).json({ ok: true });
   }),
 );
 

@@ -103,6 +103,13 @@ export const getOrderById = async (id: string) => {
   return data;
 };
 
+export const createLiqPayCheckout = async (
+  id: string,
+): Promise<{ action: string; data: string; signature: string }> => {
+  const { data } = await axiosInstance.post(`/api/orders/${id}/liqpay/checkout`);
+  return data;
+};
+
 // Admin Orders
 export const getAllOrders = async (
   page = 1,

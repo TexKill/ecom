@@ -21,6 +21,8 @@ import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import Pagination from "@/components/ui/Pagination";
 import { getOrderStatusMeta } from "@/lib/orderStatus";
+import Toast from "@/components/ui/Toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const emptyForm: ProductPayload = {
   name: "",
@@ -53,6 +55,18 @@ export default function AdminPage() {
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotalPages, setOrderTotalPages] = useState(1);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    message: string;
+    confirmText: string;
+    danger?: boolean;
+    onConfirm: () => Promise<void>;
+  } | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductPayload>(emptyForm);
@@ -106,6 +120,42 @@ export default function AdminPage() {
     return () => window.clearTimeout(timer);
   }, [error]);
 
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
+    setToast({ message, type });
+  };
+
+  const openConfirm = (config: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    danger?: boolean;
+    onConfirm: () => Promise<void>;
+  }) => {
+    setConfirmState({
+      title: config.title,
+      message: config.message,
+      confirmText: config.confirmText || t.admin.confirmAction,
+      danger: config.danger,
+      onConfirm: config.onConfirm,
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmState) return;
+    try {
+      setConfirmLoading(true);
+      await confirmState.onConfirm();
+      setConfirmState(null);
+    } catch {
+      showToast(t.admin.actionFailed, "error");
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   if (!hasHydrated || !user || !user.isAdmin) return null;
 
   const resetForm = () => {
@@ -123,7 +173,7 @@ export default function AdminPage() {
     ).trim();
 
     if (!fallbackDescription) {
-      setError(t.admin.saveFail);
+      showToast(t.admin.saveFail, "error");
       return;
     }
 
@@ -143,13 +193,15 @@ export default function AdminPage() {
         setProducts((prev) =>
           prev.map((p) => (p._id === editingId ? updated : p)),
         );
+        showToast(t.admin.productUpdated, "success");
       } else {
         const created = await createProduct(payload);
         setProducts((prev) => [created, ...prev]);
+        showToast(t.admin.productCreated, "success");
       }
       resetForm();
     } catch {
-      setError(t.admin.saveFail);
+      showToast(t.admin.saveFail, "error");
     } finally {
       setSaving(false);
     }
@@ -173,69 +225,100 @@ export default function AdminPage() {
   const handleImageUpload = async (file: File) => {
     try {
       setUploadingImage(true);
-      setError("");
       const url = await uploadProductImage(file);
       setForm((prev) => ({ ...prev, image: url }));
+      showToast(t.admin.imageUploaded, "success");
     } catch {
-      setError(t.admin.uploadFail);
+      showToast(t.admin.uploadFail, "error");
     } finally {
       setUploadingImage(false);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    try {
-      await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p._id !== id));
-      if (editingId === id) resetForm();
-    } catch {
-      setError(t.admin.deleteProductFail);
-    }
+  const handleDeleteProduct = (id: string, name: string) => {
+    openConfirm({
+      title: t.admin.confirmDeleteProductTitle,
+      message: t.admin.confirmDeleteProductMessage.replace("{name}", name),
+      confirmText: t.admin.delete,
+      danger: true,
+      onConfirm: async () => {
+        await deleteProduct(id);
+        setProducts((prev) => prev.filter((p) => p._id !== id));
+        if (editingId === id) resetForm();
+        showToast(t.admin.productDeleted, "success");
+      },
+    });
   };
 
-  const handleDeliverOrder = async (id: string) => {
-    try {
-      const updated = await markOrderDelivered(id);
-      setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
-    } catch {
-      setError(t.admin.deliverFail);
-    }
+  const handleDeliverOrder = (id: string) => {
+    openConfirm({
+      title: t.admin.confirmDeliverTitle,
+      message: t.admin.confirmDeliverMessage,
+      confirmText: t.admin.deliver,
+      onConfirm: async () => {
+        const updated = await markOrderDelivered(id);
+        setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
+        showToast(t.admin.orderDelivered, "success");
+      },
+    });
   };
 
-  const handleDeleteOrder = async (id: string) => {
-    try {
-      await deleteOrder(id);
-      setOrders((prev) => prev.filter((o) => o._id !== id));
-    } catch {
-      setError(t.admin.deleteOrderFail);
-    }
+  const handleDeleteOrder = (id: string) => {
+    openConfirm({
+      title: t.admin.confirmDeleteOrderTitle,
+      message: t.admin.confirmDeleteOrderMessage,
+      confirmText: t.admin.delete,
+      danger: true,
+      onConfirm: async () => {
+        await deleteOrder(id);
+        setOrders((prev) => prev.filter((o) => o._id !== id));
+        showToast(t.admin.orderDeleted, "success");
+      },
+    });
   };
 
-  const handleStatusChange = async (id: string, status: OrderStatus) => {
-    try {
-      setStatusUpdatingId(id);
-      const updated = await updateOrderStatus(id, status);
-      setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
-    } catch {
-      setError(t.admin.deliverFail);
-    } finally {
-      setStatusUpdatingId(null);
-    }
+  const handleStatusChange = (id: string, status: OrderStatus) => {
+    const statusLabel = getOrderStatusMeta(status, t.orders).label;
+    openConfirm({
+      title: t.admin.confirmStatusTitle,
+      message: t.admin.confirmStatusMessage.replace("{status}", statusLabel),
+      confirmText: t.admin.update,
+      onConfirm: async () => {
+        setStatusUpdatingId(id);
+        try {
+          const updated = await updateOrderStatus(id, status);
+          setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
+          showToast(t.admin.orderStatusUpdated, "success");
+        } finally {
+          setStatusUpdatingId(null);
+        }
+      },
+    });
   };
 
-  const handleRandomRestock = async () => {
-    try {
-      setRestocking(true);
-      setError("");
-      await restockProductsRandom();
-      const productsRes = await getProducts("", page, 15);
-      setProducts(productsRes.products);
-      setTotalPages(productsRes.pages);
-    } catch {
-      setError("Failed to restock products");
-    } finally {
-      setRestocking(false);
-    }
+  const handleRandomRestock = () => {
+    openConfirm({
+      title: t.admin.confirmRestockTitle,
+      message: t.admin.confirmRestockMessage,
+      confirmText: t.admin.restock,
+      onConfirm: async () => {
+        setRestocking(true);
+        try {
+          await restockProductsRandom();
+          const productsRes = await getProducts("", page, 15);
+          setProducts(productsRes.products);
+          setTotalPages(productsRes.pages);
+          showToast(t.admin.productsRestocked, "success");
+        } finally {
+          setRestocking(false);
+        }
+      },
+    });
+  };
+
+  const closeConfirm = () => {
+    if (confirmLoading) return;
+    setConfirmState(null);
   };
 
   return (
@@ -257,7 +340,7 @@ export default function AdminPage() {
               disabled={restocking}
               className="rounded border border-gray-300 px-4 py-2 text-sm hover:border-black disabled:opacity-60"
             >
-              {restocking ? "Restock..." : "Restock 1-100"}
+              {restocking ? t.admin.restocking : t.admin.restock}
             </button>
           )}
           <button
@@ -280,6 +363,24 @@ export default function AdminPage() {
           {error}
         </div>
       )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      <ConfirmModal
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ""}
+        message={confirmState?.message || ""}
+        confirmText={confirmState?.confirmText || t.admin.confirmAction}
+        danger={confirmState?.danger}
+        loading={confirmLoading}
+        cancelText={t.admin.cancel}
+        onCancel={closeConfirm}
+        onConfirm={handleConfirm}
+      />
 
       {loading ? (
         <p className="text-gray-500">{t.admin.loading}</p>
@@ -502,7 +603,9 @@ export default function AdminPage() {
                                 {t.admin.edit}
                               </button>
                               <button
-                                onClick={() => handleDeleteProduct(product._id)}
+                                onClick={() =>
+                                  handleDeleteProduct(product._id, product.name)
+                                }
                                 className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
                               >
                                 {t.admin.delete}

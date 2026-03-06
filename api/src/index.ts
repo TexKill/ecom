@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import databaseSeeder from "./databaseSeeder";
@@ -11,6 +11,7 @@ import uploadRoute from "./routes/Upload";
 import cartRouter from "./routes/Cart";
 import favoritesRouter from "./routes/Favorites";
 import subscriberRouter from "./routes/Subscriber";
+import { errorHandler, notFound } from "./middleware/Error";
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -43,10 +44,8 @@ app.use("/api/cart", cartRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/subscribers", subscriberRouter);
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({ message: err.message });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port: ${PORT}`);

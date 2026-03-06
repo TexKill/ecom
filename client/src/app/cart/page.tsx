@@ -191,7 +191,7 @@ export default function CartPage() {
               </div>
               <div className="grid grid-cols-[auto,1fr] items-start gap-x-3 text-gray-600">
                 <span className="shrink-0">{t.cart.shipping}:</span>
-                <span className="justify-self-end max-w-[170px] text-right leading-5">
+                <span className="justify-self-end max-w-170px text-right leading-5">
                   {t.cart.shippingAtCheckout}
                 </span>
               </div>

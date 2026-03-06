@@ -156,6 +156,9 @@ export type Messages = {
     paymentStatus: string;
     deliveryStatus: string;
     unpaid: string;
+    payWithLiqPay: string;
+    paying: string;
+    paymentInitFail: string;
   };
   account: {
     title: string;
@@ -187,6 +190,7 @@ export type Messages = {
     free: string;
     subtotal: string;
     total: string;
+    paymentMethod: string;
     bank: string;
     cod: string;
     couponCode: string;
@@ -240,6 +244,8 @@ export type Messages = {
     actions: string;
     edit: string;
     delete: string;
+    restock: string;
+    restocking: string;
     order: string;
     user: string;
     total: string;
@@ -248,6 +254,26 @@ export type Messages = {
     yes: string;
     no: string;
     deliver: string;
+    confirmAction: string;
+    actionFailed: string;
+    confirmDeleteProductTitle: string;
+    confirmDeleteProductMessage: string;
+    confirmDeleteOrderTitle: string;
+    confirmDeleteOrderMessage: string;
+    confirmDeliverTitle: string;
+    confirmDeliverMessage: string;
+    confirmStatusTitle: string;
+    confirmStatusMessage: string;
+    confirmRestockTitle: string;
+    confirmRestockMessage: string;
+    productUpdated: string;
+    productCreated: string;
+    imageUploaded: string;
+    productDeleted: string;
+    orderDelivered: string;
+    orderDeleted: string;
+    orderStatusUpdated: string;
+    productsRestocked: string;
   };
   footer: {
     subscribe: string;
@@ -434,6 +460,9 @@ const en: Messages = {
     paymentStatus: "Payment",
     deliveryStatus: "Delivery",
     unpaid: "Unpaid",
+    payWithLiqPay: "Pay with LiqPay",
+    paying: "Redirecting to LiqPay...",
+    paymentInitFail: "Failed to initialize payment. Please try again.",
   },
   account: {
     title: "My Account",
@@ -465,6 +494,7 @@ const en: Messages = {
     free: "Free",
     subtotal: "Subtotal",
     total: "Total",
+    paymentMethod: "Payment method",
     bank: "Bank",
     cod: "Cash on delivery",
     couponCode: "Coupon Code",
@@ -519,6 +549,8 @@ const en: Messages = {
     actions: "Actions",
     edit: "Edit",
     delete: "Delete",
+    restock: "Restock 1-100",
+    restocking: "Restock...",
     order: "Order",
     user: "User",
     total: "Total",
@@ -527,6 +559,26 @@ const en: Messages = {
     yes: "Yes",
     no: "No",
     deliver: "Deliver",
+    confirmAction: "Confirm",
+    actionFailed: "Action failed. Please try again.",
+    confirmDeleteProductTitle: "Delete product",
+    confirmDeleteProductMessage: 'Delete "{name}"? This action cannot be undone.',
+    confirmDeleteOrderTitle: "Delete order",
+    confirmDeleteOrderMessage: "Delete this order? This action cannot be undone.",
+    confirmDeliverTitle: "Mark as delivered",
+    confirmDeliverMessage: "Mark this order as delivered now?",
+    confirmStatusTitle: "Change status",
+    confirmStatusMessage: 'Update order status to "{status}"?',
+    confirmRestockTitle: "Random restock",
+    confirmRestockMessage: "Restock all products with random stock (1-100)?",
+    productUpdated: "Product updated",
+    productCreated: "Product created",
+    imageUploaded: "Image uploaded",
+    productDeleted: "Product deleted",
+    orderDelivered: "Order marked as delivered",
+    orderDeleted: "Order deleted",
+    orderStatusUpdated: "Order status updated",
+    productsRestocked: "Products restocked",
   },
   footer: {
     subscribe: "Subscribe to get updates on promotions and coupons.",
@@ -721,6 +773,9 @@ const uk: Messages = {
     paymentStatus: "Статус оплати",
     deliveryStatus: "Статус доставки",
     unpaid: "Не оплачено",
+    payWithLiqPay: "\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 LiqPay",
+    paying: "\u041f\u0435\u0440\u0435\u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 LiqPay...",
+    paymentInitFail: "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0456\u043d\u0456\u0446\u0456\u0430\u043b\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u043b\u0430\u0442\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
   },
   account: {
     ...en.account,
@@ -753,6 +808,7 @@ const uk: Messages = {
     free: "Безкоштовно",
     subtotal: "Проміжна сума",
     total: "Разом",
+    paymentMethod: "\u0421\u043f\u043e\u0441\u0456\u0431 \u043e\u043f\u043b\u0430\u0442\u0438",
     bank: "Банк",
     cod: "Післяплата",
     couponCode: "Код купона",
@@ -817,7 +873,41 @@ const uk: Messages = {
     yes: "Так",
     no: "Ні",
     deliver: "Доставити",
-  },
+    restock: "\u0420\u0435\u0441\u0442\u043e\u043a 1-100",
+    restocking: "\u0420\u0435\u0441\u0442\u043e\u043a...",
+    confirmAction: "\u041f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438",
+    actionFailed:
+      "\u0414\u0456\u044e \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0432\u0438\u043a\u043e\u043d\u0430\u0442\u0438. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
+    confirmDeleteProductTitle:
+      "\u0412\u0438\u0434\u0430\u043b\u0435\u043d\u043d\u044f \u0442\u043e\u0432\u0430\u0440\u0443",
+    confirmDeleteProductMessage:
+      '\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 "{name}"? \u0426\u044e \u0434\u0456\u044e \u043d\u0435\u043c\u043e\u0436\u043b\u0438\u0432\u043e \u0441\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438.',
+    confirmDeleteOrderTitle:
+      "\u0412\u0438\u0434\u0430\u043b\u0435\u043d\u043d\u044f \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+    confirmDeleteOrderMessage:
+      "\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0446\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f? \u0426\u044e \u0434\u0456\u044e \u043d\u0435\u043c\u043e\u0436\u043b\u0438\u0432\u043e \u0441\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438.",
+    confirmDeliverTitle:
+      "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
+    confirmDeliverMessage:
+      "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0446\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435?",
+    confirmStatusTitle: "\u0417\u043c\u0456\u043d\u0430 \u0441\u0442\u0430\u0442\u0443\u0441\u0443",
+    confirmStatusMessage:
+      '\u041e\u043d\u043e\u0432\u0438\u0442\u0438 \u0441\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 "{status}"?',
+    confirmRestockTitle:
+      "\u0412\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0438\u0439 \u0440\u0435\u0441\u0442\u043e\u043a",
+    confirmRestockMessage:
+      "\u0412\u0438\u0441\u0442\u0430\u0432\u0438\u0442\u0438 \u0432\u0441\u0456\u043c \u0442\u043e\u0432\u0430\u0440\u0430\u043c \u0432\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0443 \u043a\u0456\u043b\u044c\u043a\u0456\u0441\u0442\u044c (1-100)?",
+    productUpdated: "\u0422\u043e\u0432\u0430\u0440 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
+    productCreated: "\u0422\u043e\u0432\u0430\u0440 \u0441\u0442\u0432\u043e\u0440\u0435\u043d\u043e",
+    imageUploaded: "\u0417\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e",
+    productDeleted: "\u0422\u043e\u0432\u0430\u0440 \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
+    orderDelivered:
+      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043f\u043e\u0437\u043d\u0430\u0447\u0435\u043d\u043e \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
+    orderDeleted:
+      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
+    orderStatusUpdated:
+      "\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
+    productsRestocked: "\u0422\u043e\u0432\u0430\u0440\u0438 \u0440\u0435\u0441\u0442\u043e\u043a\u043d\u0443\u0442\u043e",  },
   footer: {
     ...en.footer,
     subscribe:
