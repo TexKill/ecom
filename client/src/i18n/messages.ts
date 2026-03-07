@@ -67,6 +67,7 @@ export type Messages = {
     seeAll: string;
   };
   products: {
+    filters: string;
     allProducts: string;
     searchTitle: string;
     loading: string;
@@ -156,6 +157,10 @@ export type Messages = {
     paymentStatus: string;
     deliveryStatus: string;
     unpaid: string;
+    customer: string;
+    customerName: string;
+    customerEmail: string;
+    customerId: string;
     payWithLiqPay: string;
     paying: string;
     paymentInitFail: string;
@@ -250,6 +255,7 @@ export type Messages = {
     user: string;
     total: string;
     paid: string;
+    paymentTx: string;
     delivered: string;
     yes: string;
     no: string;
@@ -274,6 +280,21 @@ export type Messages = {
     orderDeleted: string;
     orderStatusUpdated: string;
     productsRestocked: string;
+    view: string;
+    paymentsTab: string;
+    statsTotalOrders: string;
+    statsPaidOrders: string;
+    statsPendingOrders: string;
+    statsDeliveredOrders: string;
+    statsTotalRevenue: string;
+    statsPaidRevenue: string;
+    statsUnpaidOrders: string;
+    statsAvgOrderValue: string;
+    paymentsStatus: string;
+    paymentsDateFrom: string;
+    paymentsDateTo: string;
+    paymentsAll: string;
+    paymentsProcessed: string;
   };
   footer: {
     subscribe: string;
@@ -371,6 +392,7 @@ const en: Messages = {
     seeAll: "See All",
   },
   products: {
+    filters: "Filters",
     allProducts: "All Products",
     searchTitle: "Search",
     loading: "Loading products...",
@@ -460,6 +482,10 @@ const en: Messages = {
     paymentStatus: "Payment",
     deliveryStatus: "Delivery",
     unpaid: "Unpaid",
+    customer: "Customer",
+    customerName: "Name",
+    customerEmail: "Email",
+    customerId: "User ID",
     payWithLiqPay: "Pay with LiqPay",
     paying: "Redirecting to LiqPay...",
     paymentInitFail: "Failed to initialize payment. Please try again.",
@@ -555,6 +581,7 @@ const en: Messages = {
     user: "User",
     total: "Total",
     paid: "Paid",
+    paymentTx: "Payment TX",
     delivered: "Delivered",
     yes: "Yes",
     no: "No",
@@ -562,9 +589,11 @@ const en: Messages = {
     confirmAction: "Confirm",
     actionFailed: "Action failed. Please try again.",
     confirmDeleteProductTitle: "Delete product",
-    confirmDeleteProductMessage: 'Delete "{name}"? This action cannot be undone.',
+    confirmDeleteProductMessage:
+      'Delete "{name}"? This action cannot be undone.',
     confirmDeleteOrderTitle: "Delete order",
-    confirmDeleteOrderMessage: "Delete this order? This action cannot be undone.",
+    confirmDeleteOrderMessage:
+      "Delete this order? This action cannot be undone.",
     confirmDeliverTitle: "Mark as delivered",
     confirmDeliverMessage: "Mark this order as delivered now?",
     confirmStatusTitle: "Change status",
@@ -579,6 +608,21 @@ const en: Messages = {
     orderDeleted: "Order deleted",
     orderStatusUpdated: "Order status updated",
     productsRestocked: "Products restocked",
+    view: "View",
+    paymentsTab: "Payments",
+    statsTotalOrders: "Total orders",
+    statsPaidOrders: "Paid orders",
+    statsPendingOrders: "Pending orders",
+    statsDeliveredOrders: "Delivered orders",
+    statsTotalRevenue: "Total revenue",
+    statsPaidRevenue: "Paid revenue",
+    statsUnpaidOrders: "Unpaid orders",
+    statsAvgOrderValue: "Avg order value",
+    paymentsStatus: "Status",
+    paymentsDateFrom: "Date from",
+    paymentsDateTo: "Date to",
+    paymentsAll: "All",
+    paymentsProcessed: "Processed",
   },
   footer: {
     subscribe: "Subscribe to get updates on promotions and coupons.",
@@ -681,6 +725,7 @@ const uk: Messages = {
   },
   products: {
     ...en.products,
+    filters: "Фільтри",
     allProducts: "Усі товари",
     searchTitle: "Пошук",
     loading: "Завантаження товарів...",
@@ -773,9 +818,16 @@ const uk: Messages = {
     paymentStatus: "Статус оплати",
     deliveryStatus: "Статус доставки",
     unpaid: "Не оплачено",
-    payWithLiqPay: "\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 LiqPay",
-    paying: "\u041f\u0435\u0440\u0435\u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 LiqPay...",
-    paymentInitFail: "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0456\u043d\u0456\u0446\u0456\u0430\u043b\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u043b\u0430\u0442\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
+    customer: "Клієнт",
+    customerName: "Ім'я",
+    customerEmail: "Email",
+    customerId: "ID користувача",
+    payWithLiqPay:
+      "\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 LiqPay",
+    paying:
+      "\u041f\u0435\u0440\u0435\u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 LiqPay...",
+    paymentInitFail:
+      "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0456\u043d\u0456\u0446\u0456\u0430\u043b\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u043b\u0430\u0442\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
   },
   account: {
     ...en.account,
@@ -808,7 +860,8 @@ const uk: Messages = {
     free: "Безкоштовно",
     subtotal: "Проміжна сума",
     total: "Разом",
-    paymentMethod: "\u0421\u043f\u043e\u0441\u0456\u0431 \u043e\u043f\u043b\u0430\u0442\u0438",
+    paymentMethod:
+      "\u0421\u043f\u043e\u0441\u0456\u0431 \u043e\u043f\u043b\u0430\u0442\u0438",
     bank: "Банк",
     cod: "Післяплата",
     couponCode: "Код купона",
@@ -869,13 +922,15 @@ const uk: Messages = {
     user: "Користувач",
     total: "Сума",
     paid: "Оплачено",
+    paymentTx: "\u041f\u043b\u0430\u0442\u0456\u0436 TX",
     delivered: "Доставлено",
     yes: "Так",
     no: "Ні",
     deliver: "Доставити",
     restock: "\u0420\u0435\u0441\u0442\u043e\u043a 1-100",
     restocking: "\u0420\u0435\u0441\u0442\u043e\u043a...",
-    confirmAction: "\u041f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438",
+    confirmAction:
+      "\u041f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438",
     actionFailed:
       "\u0414\u0456\u044e \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0432\u0438\u043a\u043e\u043d\u0430\u0442\u0438. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
     confirmDeleteProductTitle:
@@ -890,24 +945,54 @@ const uk: Messages = {
       "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
     confirmDeliverMessage:
       "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0446\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435?",
-    confirmStatusTitle: "\u0417\u043c\u0456\u043d\u0430 \u0441\u0442\u0430\u0442\u0443\u0441\u0443",
+    confirmStatusTitle:
+      "\u0417\u043c\u0456\u043d\u0430 \u0441\u0442\u0430\u0442\u0443\u0441\u0443",
     confirmStatusMessage:
       '\u041e\u043d\u043e\u0432\u0438\u0442\u0438 \u0441\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 "{status}"?',
     confirmRestockTitle:
       "\u0412\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0438\u0439 \u0440\u0435\u0441\u0442\u043e\u043a",
     confirmRestockMessage:
       "\u0412\u0438\u0441\u0442\u0430\u0432\u0438\u0442\u0438 \u0432\u0441\u0456\u043c \u0442\u043e\u0432\u0430\u0440\u0430\u043c \u0432\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0443 \u043a\u0456\u043b\u044c\u043a\u0456\u0441\u0442\u044c (1-100)?",
-    productUpdated: "\u0422\u043e\u0432\u0430\u0440 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
-    productCreated: "\u0422\u043e\u0432\u0430\u0440 \u0441\u0442\u0432\u043e\u0440\u0435\u043d\u043e",
-    imageUploaded: "\u0417\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e",
-    productDeleted: "\u0422\u043e\u0432\u0430\u0440 \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
+    productUpdated:
+      "\u0422\u043e\u0432\u0430\u0440 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
+    productCreated:
+      "\u0422\u043e\u0432\u0430\u0440 \u0441\u0442\u0432\u043e\u0440\u0435\u043d\u043e",
+    imageUploaded:
+      "\u0417\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e",
+    productDeleted:
+      "\u0422\u043e\u0432\u0430\u0440 \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
     orderDelivered:
       "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043f\u043e\u0437\u043d\u0430\u0447\u0435\u043d\u043e \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
     orderDeleted:
       "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
     orderStatusUpdated:
       "\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
-    productsRestocked: "\u0422\u043e\u0432\u0430\u0440\u0438 \u0440\u0435\u0441\u0442\u043e\u043a\u043d\u0443\u0442\u043e",  },
+    productsRestocked:
+      "\u0422\u043e\u0432\u0430\u0440\u0438 \u0440\u0435\u0441\u0442\u043e\u043a\u043d\u0443\u0442\u043e",
+    view: "\u041f\u0435\u0440\u0435\u0433\u043b\u044f\u0434",
+    paymentsTab: "\u041f\u043b\u0430\u0442\u0435\u0436\u0456",
+    statsTotalOrders:
+      "\u0412\u0441\u044c\u043e\u0433\u043e \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u044c",
+    statsPaidOrders:
+      "\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+    statsPendingOrders:
+      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0432 \u043e\u0447\u0456\u043a\u0443\u0432\u0430\u043d\u043d\u0456",
+    statsDeliveredOrders:
+      "\u0414\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+    statsTotalRevenue:
+      "\u0417\u0430\u0433\u0430\u043b\u044c\u043d\u0430 \u0432\u0438\u0440\u0443\u0447\u043a\u0430",
+    statsPaidRevenue:
+      "\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u0430 \u0432\u0438\u0440\u0443\u0447\u043a\u0430",
+    statsUnpaidOrders:
+      "\u041d\u0435\u043e\u043f\u043b\u0430\u0447\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+    statsAvgOrderValue:
+      "\u0421\u0435\u0440\u0435\u0434\u043d\u0456\u0439 \u0447\u0435\u043a",
+    paymentsStatus: "\u0421\u0442\u0430\u0442\u0443\u0441",
+    paymentsDateFrom: "\u0414\u0430\u0442\u0430 \u0432\u0456\u0434",
+    paymentsDateTo: "\u0414\u0430\u0442\u0430 \u0434\u043e",
+    paymentsAll: "\u0412\u0441\u0456",
+    paymentsProcessed: "\u041e\u0431\u0440\u043e\u0431\u043b\u0435\u043d\u043e",
+  },
   footer: {
     ...en.footer,
     subscribe:

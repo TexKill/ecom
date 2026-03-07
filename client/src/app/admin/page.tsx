@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   createProduct,
   deleteOrder,
   deleteProduct,
+  getAdminOrderStats,
   getAllOrders,
+  getPaymentLogs,
   getProducts,
-  markOrderDelivered,
   ProductPayload,
   restockProductsRandom,
   uploadProductImage,
   updateOrderStatus,
   updateProduct,
 } from "@/lib/api";
-import { IOrder, IProduct, IUser, OrderStatus } from "@/types";
+import { IOrder, IProduct, IUser, OrderStatus, IPaymentLog } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -36,17 +38,33 @@ const emptyForm: ProductPayload = {
   countInStock: 0,
 };
 
+type AdminTab = "products" | "orders" | "payments";
+const isAdminTab = (value: string): value is AdminTab =>
+  value === "products" || value === "orders" || value === "payments";
+
 export default function AdminPage() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
 
-  const [tab, setTab] = useState<"products" | "orders">("products");
+  const [tab, setTab] = useState<AdminTab>("products");
   const [products, setProducts] = useState<IProduct[]>([]);
   const [orders, setOrders] = useState<IOrder[]>([]);
+  const [paymentLogs, setPaymentLogs] = useState<IPaymentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState<{
+    totalOrders: number;
+    paidOrders: number;
+    unpaidOrders: number;
+    deliveredOrders: number;
+    pendingOrders: number;
+    totalRevenue: number;
+    paidRevenue: number;
+    averageOrderValue: number;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [restocking, setRestocking] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -54,6 +72,11 @@ export default function AdminPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [orderPage, setOrderPage] = useState(1);
   const [orderTotalPages, setOrderTotalPages] = useState(1);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [paymentTotalPages, setPaymentTotalPages] = useState(1);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [paymentDateFrom, setPaymentDateFrom] = useState("");
+  const [paymentDateTo, setPaymentDateTo] = useState("");
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [toast, setToast] = useState<{
@@ -104,6 +127,20 @@ export default function AdminPage() {
           setOrders(ordersRes.orders);
           setOrderTotalPages(ordersRes.pages);
         }
+
+        if (tab === "payments") {
+          const logsRes = await getPaymentLogs({
+            page: paymentPage,
+            status: paymentStatusFilter || undefined,
+            dateFrom: paymentDateFrom || undefined,
+            dateTo: paymentDateTo || undefined,
+          });
+          setPaymentLogs(logsRes.logs);
+          setPaymentTotalPages(logsRes.pages);
+        }
+
+        const statsRes = await getAdminOrderStats();
+        setStats(statsRes);
       } catch {
         setError(loadFailMsg);
       } finally {
@@ -112,13 +149,59 @@ export default function AdminPage() {
     };
 
     load();
-  }, [hasHydrated, user, router, tab, page, orderPage, loadFailMsg]);
+  }, [
+    hasHydrated,
+    user,
+    router,
+    tab,
+    page,
+    orderPage,
+    paymentPage,
+    paymentStatusFilter,
+    paymentDateFrom,
+    paymentDateTo,
+    loadFailMsg,
+  ]);
+
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [paymentStatusFilter, paymentDateFrom, paymentDateTo]);
 
   useEffect(() => {
     if (!error) return;
     const timer = window.setTimeout(() => setError(""), 4000);
     return () => window.clearTimeout(timer);
   }, [error]);
+
+  useEffect(() => {
+    const queryTab = searchParams.get("tab");
+    if (queryTab && isAdminTab(queryTab)) {
+      setTab(queryTab);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("adminTab", queryTab);
+      }
+      return;
+    }
+
+    if (typeof window === "undefined") return;
+    const savedTab = localStorage.getItem("adminTab");
+    if (savedTab && isAdminTab(savedTab)) {
+      setTab(savedTab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", savedTab);
+      router.replace(`/admin?${params.toString()}`, { scroll: false });
+    }
+  }, [router, searchParams]);
+
+  const handleTabChange = (nextTab: AdminTab) => {
+    setTab(nextTab);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("adminTab", nextTab);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", nextTab);
+    router.replace(`/admin?${params.toString()}`, { scroll: false });
+  };
 
   const showToast = (
     message: string,
@@ -250,19 +333,6 @@ export default function AdminPage() {
     });
   };
 
-  const handleDeliverOrder = (id: string) => {
-    openConfirm({
-      title: t.admin.confirmDeliverTitle,
-      message: t.admin.confirmDeliverMessage,
-      confirmText: t.admin.deliver,
-      onConfirm: async () => {
-        const updated = await markOrderDelivered(id);
-        setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
-        showToast(t.admin.orderDelivered, "success");
-      },
-    });
-  };
-
   const handleDeleteOrder = (id: string) => {
     openConfirm({
       title: t.admin.confirmDeleteOrderTitle,
@@ -322,7 +392,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-7xl px-3 py-6 sm:px-4 sm:py-8">
       <Breadcrumbs
         items={[
           { label: t.header.home, href: "/" },
@@ -331,29 +401,35 @@ export default function AdminPage() {
         ]}
       />
 
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t.admin.title}</h1>
-        <div className="flex gap-2">
-          {tab === "products" && (
-            <button
-              onClick={handleRandomRestock}
-              disabled={restocking}
-              className="rounded border border-gray-300 px-4 py-2 text-sm hover:border-black disabled:opacity-60"
-            >
-              {restocking ? t.admin.restocking : t.admin.restock}
-            </button>
-          )}
+      <div className="mb-6 space-y-3">
+        <h1 className="text-3xl font-bold leading-tight sm:text-2xl">{t.admin.title}</h1>
+        {tab === "products" && (
           <button
-            onClick={() => setTab("products")}
-            className={`rounded px-4 py-2 text-sm ${tab === "products" ? "bg-black text-white" : "bg-gray-100"}`}
+            onClick={handleRandomRestock}
+            disabled={restocking}
+            className="w-full rounded border border-gray-300 px-4 py-2 text-sm hover:border-black disabled:opacity-60 sm:w-auto"
+          >
+            {restocking ? t.admin.restocking : t.admin.restock}
+          </button>
+        )}
+        <div className="grid grid-cols-3 gap-2 sm:flex">
+          <button
+            onClick={() => handleTabChange("products")}
+            className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "products" ? "bg-black text-white" : "bg-gray-100"}`}
           >
             {t.admin.products}
           </button>
           <button
-            onClick={() => setTab("orders")}
-            className={`rounded px-4 py-2 text-sm ${tab === "orders" ? "bg-black text-white" : "bg-gray-100"}`}
+            onClick={() => handleTabChange("orders")}
+            className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "orders" ? "bg-black text-white" : "bg-gray-100"}`}
           >
             {t.admin.orders}
+          </button>
+          <button
+            onClick={() => handleTabChange("payments")}
+            className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "payments" ? "bg-black text-white" : "bg-gray-100"}`}
+          >
+            {t.admin.paymentsTab}
           </button>
         </div>
       </div>
@@ -386,6 +462,45 @@ export default function AdminPage() {
         <p className="text-gray-500">{t.admin.loading}</p>
       ) : (
         <>
+          {stats && (
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsTotalOrders}</p>
+                <p className="text-xl font-semibold">{stats.totalOrders}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsPaidOrders}</p>
+                <p className="text-xl font-semibold">{stats.paidOrders}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsPendingOrders}</p>
+                <p className="text-xl font-semibold">{stats.pendingOrders}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsDeliveredOrders}</p>
+                <p className="text-xl font-semibold">{stats.deliveredOrders}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsTotalRevenue}</p>
+                <p className="text-xl font-semibold">₴{stats.totalRevenue.toFixed(2)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsPaidRevenue}</p>
+                <p className="text-xl font-semibold">₴{stats.paidRevenue.toFixed(2)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsUnpaidOrders}</p>
+                <p className="text-xl font-semibold">{stats.unpaidOrders}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs text-gray-500">{t.admin.statsAvgOrderValue}</p>
+                <p className="text-xl font-semibold">
+                  ₴{stats.averageOrderValue.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          )}
+
           {tab === "products" && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
               <form
@@ -637,6 +752,7 @@ export default function AdminPage() {
                       <th className="px-3 py-2 text-left">{t.admin.user}</th>
                       <th className="px-3 py-2 text-left">{t.admin.total}</th>
                       <th className="px-3 py-2 text-left">{t.admin.paid}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.paymentTx}</th>
                       <th className="px-3 py-2 text-left">
                         {t.admin.delivered}
                       </th>
@@ -661,6 +777,14 @@ export default function AdminPage() {
                           </td>
                           <td className="px-3 py-2">
                             {order.isPaid ? t.admin.yes : t.admin.no}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-col gap-1 text-xs text-gray-700">
+                              <span>{order.paymentResult?.id || "-"}</span>
+                              <span className="text-gray-500">
+                                {order.paymentResult?.status || "-"}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             {order.isDelivered ? t.admin.yes : t.admin.no}
@@ -690,14 +814,12 @@ export default function AdminPage() {
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex gap-2">
-                              {!order.isDelivered && (
-                                <button
-                                  onClick={() => handleDeliverOrder(order._id)}
-                                  className="rounded border border-gray-300 px-2 py-1 hover:border-black"
-                                >
-                                  {t.admin.deliver}
-                                </button>
-                              )}
+                              <Link
+                                href={`/orders/${order._id}`}
+                                className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                              >
+                                {t.admin.view}
+                              </Link>
                               <button
                                 onClick={() => handleDeleteOrder(order._id)}
                                 className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
@@ -717,6 +839,87 @@ export default function AdminPage() {
                 currentPage={orderPage}
                 totalPages={orderTotalPages}
                 onPageChange={setOrderPage}
+              />
+            </div>
+          )}
+
+          {tab === "payments" && (
+            <div className="space-y-4 rounded-lg border border-gray-200 p-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                <label className="flex flex-col gap-1 text-xs text-gray-600">
+                  {t.admin.paymentsStatus}
+                  <select
+                    value={paymentStatusFilter}
+                    onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                    className="rounded border border-gray-300 px-2 py-2 text-sm"
+                  >
+                    <option value="">{t.admin.paymentsAll}</option>
+                    <option value="success">success</option>
+                    <option value="sandbox">sandbox</option>
+                    <option value="failure">failure</option>
+                    <option value="error">error</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-gray-600">
+                  {t.admin.paymentsDateFrom}
+                  <input
+                    type="date"
+                    value={paymentDateFrom}
+                    onChange={(e) => setPaymentDateFrom(e.target.value)}
+                    className="rounded border border-gray-300 px-2 py-2 text-sm"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-gray-600">
+                  {t.admin.paymentsDateTo}
+                  <input
+                    type="date"
+                    value={paymentDateTo}
+                    onChange={(e) => setPaymentDateTo(e.target.value)}
+                    className="rounded border border-gray-300 px-2 py-2 text-sm"
+                  />
+                </label>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left">{t.admin.order}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.paymentTx}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.paymentsStatus}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.paymentsProcessed}</th>
+                      <th className="px-3 py-2 text-left">{t.admin.actions}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentLogs.map((log) => (
+                      <tr key={log._id} className="border-t">
+                        <td className="px-3 py-2">{log.orderId.slice(-8)}</td>
+                        <td className="px-3 py-2">{log.transactionId || "-"}</td>
+                        <td className="px-3 py-2">{log.status || "-"}</td>
+                        <td className="px-3 py-2">
+                          {log.processedAt
+                            ? new Date(log.processedAt).toLocaleString()
+                            : "-"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Link
+                            href={`/orders/${log.orderId}`}
+                            className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                          >
+                            {t.admin.view}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <Pagination
+                currentPage={paymentPage}
+                totalPages={paymentTotalPages}
+                onPageChange={setPaymentPage}
               />
             </div>
           )}

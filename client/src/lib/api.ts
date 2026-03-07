@@ -1,5 +1,5 @@
 import axiosInstance from "./axios";
-import { IProduct, IUser, IOrder, OrderStatus } from "../types";
+import { IProduct, IUser, IOrder, OrderStatus, IPaymentLog } from "../types";
 
 export const loginUser = async (email: string, password: string) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
@@ -118,6 +118,20 @@ export const getAllOrders = async (
   return data;
 };
 
+export const getAdminOrderStats = async (): Promise<{
+  totalOrders: number;
+  paidOrders: number;
+  unpaidOrders: number;
+  deliveredOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
+  paidRevenue: number;
+  averageOrderValue: number;
+}> => {
+  const { data } = await axiosInstance.get("/api/orders/stats");
+  return data;
+};
+
 export const markOrderDelivered = async (id: string) => {
   const { data } = await axiosInstance.put<IOrder>(`/api/orders/${id}/deliver`);
   return data;
@@ -134,6 +148,22 @@ export const deleteOrder = async (id: string) => {
   const { data } = await axiosInstance.delete<{ message: string }>(
     `/api/orders/${id}`,
   );
+  return data;
+};
+
+export const getPaymentLogs = async (params?: {
+  page?: number;
+  status?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<{ logs: IPaymentLog[]; pages: number; page: number; total: number }> => {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.status) query.set("status", params.status);
+  if (params?.dateFrom) query.set("dateFrom", params.dateFrom);
+  if (params?.dateTo) query.set("dateTo", params.dateTo);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const { data } = await axiosInstance.get(`/api/orders/payment-logs${suffix}`);
   return data;
 };
 

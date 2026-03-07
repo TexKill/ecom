@@ -64,6 +64,8 @@ export default function OrderDetailsPage() {
         ? t.checkout.cod
         : order.paymentMethod
     : "";
+  const orderUser =
+    order && typeof order.user !== "string" ? order.user : null;
 
   const handlePayWithLiqPay = async () => {
     if (!order || startingPayment) return;
@@ -104,8 +106,15 @@ export default function OrderDetailsPage() {
       <Breadcrumbs
         items={[
           { label: t.header.home, href: "/" },
-          { label: t.account.myAccount, href: "/account" },
-          { label: t.orders.title, href: "/orders" },
+          ...(user.isAdmin
+            ? [
+                { label: t.account.adminDashboard, href: "/admin" },
+                { label: t.admin.orders, href: "/admin?tab=orders" },
+              ]
+            : [
+                { label: t.account.myAccount, href: "/account" },
+                { label: t.orders.title, href: "/orders" },
+              ]),
           {
             label: order
               ? `${t.orders.order} #${order._id.slice(-8)}`
@@ -162,6 +171,34 @@ export default function OrderDetailsPage() {
                   )}
                 </div>
               </section>
+
+              {user.isAdmin && orderUser && (
+                <section className="rounded-lg border border-gray-200 p-4 sm:p-6">
+                  <h2 className="mb-4 text-lg font-semibold">
+                    {t.orders.customer}
+                  </h2>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p>
+                      <span className="text-gray-500">
+                        {t.orders.customerName}:
+                      </span>{" "}
+                      {orderUser.name}
+                    </p>
+                    <p>
+                      <span className="text-gray-500">
+                        {t.orders.customerEmail}:
+                      </span>{" "}
+                      {orderUser.email}
+                    </p>
+                    <p>
+                      <span className="text-gray-500">
+                        {t.orders.customerId}:
+                      </span>{" "}
+                      {orderUser._id}
+                    </p>
+                  </div>
+                </section>
+              )}
 
               <section className="rounded-lg border border-gray-200 p-4 sm:p-6">
                 <h2 className="mb-4 text-lg font-semibold">

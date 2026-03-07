@@ -1,11 +1,64 @@
 import axios from "axios";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+type StoredUser = {
+  _id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  token: string;
+};
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const setAuthCookies = (user: StoredUser) => {
+  const maxAge = 60 * 60 * 24 * 30;
+  document.cookie = `auth_token=${encodeURIComponent(user.token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+  document.cookie = `auth_is_admin=${user.isAdmin ? "1" : "0"}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
+};
+
+const clearAuthCookies = () => {
+  document.cookie = "auth_token=; Path=/; Max-Age=0; SameSite=Lax";
+  document.cookie = "auth_is_admin=; Path=/; Max-Age=0; SameSite=Lax";
+};
+
+const persistAuthUser = (user: StoredUser) => {
+  localStorage.setItem("user", JSON.stringify(user));
+
+  try {
+    const authRaw = localStorage.getItem("auth");
+    if (authRaw) {
+      const parsed = JSON.parse(authRaw);
+      parsed.state = { ...(parsed.state || {}), user };
+      localStorage.setItem("auth", JSON.stringify(parsed));
+    }
+  } catch {
+    // ignore malformed auth payload
+  }
+
+  setAuthCookies(user);
+};
+
+const clearAuthData = () => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("auth");
+  clearAuthCookies();
+};
 
 const getTokenFromStorage = (): string | null => {
   const legacyUser = localStorage.getItem("user");
@@ -32,11 +85,67 @@ const getTokenFromStorage = (): string | null => {
   return null;
 };
 
+const decodeTokenExp = (token: string): number | null => {
+  try {
+    const payloadPart = token.split(".")[1];
+    if (!payloadPart) return null;
+    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    const payload = JSON.parse(json);
+    return typeof payload.exp === "number" ? payload.exp : null;
+  } catch {
+    return null;
+  }
+};
+
+const shouldRefreshTokenSoon = (token: string, thresholdSeconds = 10 * 60) => {
+  const exp = decodeTokenExp(token);
+  if (!exp) return false;
+  const now = Math.floor(Date.now() / 1000);
+  return exp - now <= thresholdSeconds;
+};
+
+const refreshSessionToken = async (): Promise<string | null> => {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const token = getTokenFromStorage();
+    if (!token) return null;
+
+    try {
+      const { data } = await refreshClient.post<StoredUser>(
+        "/api/users/refresh",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (data?.token) {
+        persistAuthUser(data);
+        return data.token;
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
 // Automatic token injection for authenticated requests
 axiosInstance.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (typeof window !== "undefined") {
-      const token = getTokenFromStorage();
+      let token = getTokenFromStorage();
+      if (token && shouldRefreshTokenSoon(token)) {
+        const refreshed = await refreshSessionToken();
+        if (refreshed) {
+          token = refreshed;
+        }
+      }
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -49,11 +158,35 @@ axiosInstance.interceptors.request.use(
 // Automatic logout on 401 Unauthorized response
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config as
+      | (typeof error.config & { _retry?: boolean })
+      | undefined;
+
+    const requestUrl = String(originalRequest?.url || "");
+    const isAuthEndpoint =
+      requestUrl.includes("/api/users/login") ||
+      requestUrl.includes("/api/users/register") ||
+      requestUrl.includes("/api/users/refresh");
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
+      originalRequest._retry = true;
+      const newToken = await refreshSessionToken();
+      if (newToken) {
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return axiosInstance(originalRequest);
+      }
+    }
+
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("user");
-        localStorage.removeItem("auth");
+        clearAuthData();
         window.location.href = "/login";
       }
     }

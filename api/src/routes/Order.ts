@@ -1,8 +1,10 @@
 import express from "express";
+import crypto from "crypto";
 import { AuthRequest } from "../types/auth";
 import { Response } from "express";
 import asyncHandler from "express-async-handler";
 import { Order } from "../models/Order";
+import { PaymentLog } from "../models/PaymentLog";
 import { Product } from "../models/Product";
 import { protect } from "../middleware/Auth";
 import { admin } from "../middleware/Admin";
@@ -167,6 +169,175 @@ orderRoute.get(
   }),
 );
 
+// @desc   Get admin order stats
+// @route  GET /api/orders/stats
+// @access Admin
+orderRoute.get(
+  "/stats",
+  protect,
+  admin,
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const [
+      totalOrders,
+      paidOrders,
+      deliveredOrders,
+      pendingOrders,
+      revenueStats,
+      paidRevenueStats,
+    ] = await Promise.all([
+      Order.countDocuments({}),
+      Order.countDocuments({ isPaid: true }),
+      Order.countDocuments({ isDelivered: true }),
+      Order.countDocuments({ status: "pending" }),
+      Order.aggregate([{ $group: { _id: null, totalRevenue: { $sum: "$totalPrice" } } }]),
+      Order.aggregate([
+        { $match: { isPaid: true } },
+        { $group: { _id: null, paidRevenue: { $sum: "$totalPrice" } } },
+      ]),
+    ]);
+
+    const unpaidOrders = Math.max(totalOrders - paidOrders, 0);
+    const totalRevenue = Number(revenueStats[0]?.totalRevenue || 0);
+    const paidRevenue = Number(paidRevenueStats[0]?.paidRevenue || 0);
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    res.json({
+      totalOrders,
+      paidOrders,
+      unpaidOrders,
+      deliveredOrders,
+      pendingOrders,
+      totalRevenue,
+      paidRevenue,
+      averageOrderValue,
+    });
+  }),
+);
+
+// @desc   Get LiqPay payment logs
+// @route  GET /api/orders/payment-logs
+// @access Admin
+orderRoute.get(
+  "/payment-logs",
+  protect,
+  admin,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const pageSize = 20;
+    const page = Math.max(1, Number(req.query.page) || 1);
+
+    const status = String(req.query.status || "").trim();
+    const dateFromRaw = String(req.query.dateFrom || "").trim();
+    const dateToRaw = String(req.query.dateTo || "").trim();
+
+    const filter: Record<string, unknown> = { provider: "liqpay" };
+
+    if (status) filter.status = status;
+
+    if (dateFromRaw || dateToRaw) {
+      const processedAt: Record<string, Date> = {};
+
+      if (dateFromRaw) {
+        const fromDate = new Date(dateFromRaw);
+        if (Number.isNaN(fromDate.getTime())) {
+          res.status(400);
+          throw new Error("Invalid dateFrom format");
+        }
+        processedAt.$gte = fromDate;
+      }
+
+      if (dateToRaw) {
+        const toDate = new Date(dateToRaw);
+        if (Number.isNaN(toDate.getTime())) {
+          res.status(400);
+          throw new Error("Invalid dateTo format");
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateToRaw)) {
+          toDate.setHours(23, 59, 59, 999);
+        }
+        processedAt.$lte = toDate;
+      }
+
+      filter.processedAt = processedAt;
+    }
+
+    const count = await PaymentLog.countDocuments(filter);
+    const logs = await PaymentLog.find(filter)
+      .sort({ processedAt: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1));
+
+    if (count === 0) {
+      const orderFilter: Record<string, unknown> = {
+        "paymentResult.id": { $exists: true, $nin: ["", null] },
+      };
+
+      if (status) {
+        orderFilter["paymentResult.status"] = status;
+      }
+
+      if (dateFromRaw || dateToRaw) {
+        const paidAt: Record<string, Date> = {};
+
+        if (dateFromRaw) {
+          const fromDate = new Date(dateFromRaw);
+          if (Number.isNaN(fromDate.getTime())) {
+            res.status(400);
+            throw new Error("Invalid dateFrom format");
+          }
+          paidAt.$gte = fromDate;
+        }
+
+        if (dateToRaw) {
+          const toDate = new Date(dateToRaw);
+          if (Number.isNaN(toDate.getTime())) {
+            res.status(400);
+            throw new Error("Invalid dateTo format");
+          }
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateToRaw)) {
+            toDate.setHours(23, 59, 59, 999);
+          }
+          paidAt.$lte = toDate;
+        }
+
+        orderFilter.paidAt = paidAt;
+      }
+
+      const fallbackCount = await Order.countDocuments(orderFilter);
+      const fallbackOrders = await Order.find(orderFilter)
+        .sort({ paidAt: -1, createdAt: -1 })
+        .limit(pageSize)
+        .skip(pageSize * (page - 1))
+        .select("_id paymentResult paidAt createdAt");
+
+      const fallbackLogs = fallbackOrders.map((order) => ({
+        _id: `order-${order._id.toString()}`,
+        provider: "liqpay",
+        orderId: order._id.toString(),
+        order: order._id,
+        transactionId: order.paymentResult?.id || "",
+        status: order.paymentResult?.status || "",
+        processedAt: order.paidAt || (order as any).createdAt,
+      }));
+
+      res.json({
+        logs: fallbackLogs,
+        page,
+        pages: Math.max(1, Math.ceil(fallbackCount / pageSize)),
+        total: fallbackCount,
+        fallback: true,
+      });
+      return;
+    }
+
+    res.json({
+      logs,
+      page,
+      pages: Math.max(1, Math.ceil(count / pageSize)),
+      total: count,
+    });
+  }),
+);
+
 // @desc   Create LiqPay checkout payload for order
 // @route  POST /api/orders/:id/liqpay/checkout
 // @access Private
@@ -261,6 +432,11 @@ orderRoute.post(
       throw new Error("Invalid LiqPay signature");
     }
 
+    const callbackHash = crypto
+      .createHash("sha256")
+      .update(`${data}:${signature}`, "utf8")
+      .digest("hex");
+
     const payload = decodeLiqPayPayload(data);
     const orderId = String(payload.order_id || "");
 
@@ -269,14 +445,33 @@ orderRoute.post(
       throw new Error("LiqPay callback does not contain order_id");
     }
 
+    const status = String(payload.status || "");
+    const transactionId = String(payload.transaction_id || payload.payment_id || "");
+
+    try {
+      const existingOrder = await Order.findById(orderId).select("_id");
+      await PaymentLog.create({
+        provider: "liqpay",
+        orderId,
+        order: existingOrder?._id,
+        transactionId,
+        status,
+        callbackHash,
+        payload,
+      });
+    } catch (error: any) {
+      if (error?.code === 11000) {
+        res.status(200).json({ ok: true, duplicate: true });
+        return;
+      }
+      throw error;
+    }
+
     const order = await Order.findById(orderId);
     if (!order) {
       res.status(200).json({ ok: true });
       return;
     }
-
-    const status = String(payload.status || "");
-    const transactionId = String(payload.transaction_id || payload.payment_id || "");
 
     if (isLiqPaySuccessStatus(status) && !order.isPaid) {
       order.isPaid = true;

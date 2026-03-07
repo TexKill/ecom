@@ -124,4 +124,28 @@ userRoute.put(
   }),
 );
 
+// @desc  Refresh session token
+// @route POST /api/users/refresh
+userRoute.post(
+  "/refresh",
+  protect,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      token: generateToken(user._id),
+      createdAt: user.createdAt,
+    });
+  }),
+);
+
 export default userRoute;

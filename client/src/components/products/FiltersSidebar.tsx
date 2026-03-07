@@ -44,7 +44,7 @@ export default function FiltersSidebar() {
         className="md:hidden flex items-center gap-2 w-full border border-gray-200 rounded-lg px-4 py-3 text-sm font-medium bg-white mb-4"
       >
         <SlidersHorizontal size={16} />
-        {t.products.clearFilters || "Filters"}
+        {t.products.filters}
         {hasActiveFilters && (
           <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
             {[category, brand, minPrice, maxPrice].filter(Boolean).length}
@@ -72,7 +72,7 @@ export default function FiltersSidebar() {
       >
         {/* Panel title */}
         <div className="flex items-center justify-between p-4 border-b md:hidden">
-          <span className="font-bold text-base">Filters</span>
+          <span className="font-bold text-base">{t.products.filters}</span>
           <button onClick={() => setMobileOpen(false)}>
             <X size={20} />
           </button>

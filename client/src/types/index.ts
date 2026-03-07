@@ -67,6 +67,12 @@ export interface IOrder {
     country: string;
   };
   paymentMethod: string;
+  paymentResult?: {
+    id?: string;
+    status?: string;
+    update_time?: string;
+    email_address?: string;
+  };
   shippingPrice: number;
   totalPrice: number;
   isPaid: boolean;
@@ -74,5 +80,15 @@ export interface IOrder {
   isDelivered: boolean;
   deliveredAt?: string;
   status: OrderStatus;
+  createdAt?: string;
+}
+
+export interface IPaymentLog {
+  _id: string;
+  provider: string;
+  orderId: string;
+  transactionId: string;
+  status: string;
+  processedAt?: string;
   createdAt?: string;
 }
