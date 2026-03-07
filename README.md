@@ -149,6 +149,45 @@ http://localhost:3000
 
 ---
 
+### Docker Setup
+
+Requirements:
+
+- Docker Desktop
+- Filled `api/.env`
+
+From project root:
+
+```bash
+docker compose up --build -d
+```
+
+Services:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:9000`
+
+Useful commands:
+
+```bash
+docker compose logs -f
+docker compose down
+```
+
+Optional API URL override for client build/runtime:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:9000 docker compose up --build -d
+```
+
+Optional API port override:
+
+```bash
+API_PORT=9001 NEXT_PUBLIC_API_URL=http://localhost:9001 docker compose up --build -d
+```
+
+---
+
 ## 🌱 Database Seeding
 
 Seeding is protected and disabled by default.

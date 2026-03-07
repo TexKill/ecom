@@ -52,6 +52,9 @@ app.use("/api/upload", uploadRoute);
 app.use("/api/cart", cartRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/subscribers", subscriberRouter);
+app.get("/", (_req, res) => {
+  res.json({ status: "ok", service: "api" });
+});
 
 app.use(notFound);
 app.use(errorHandler);

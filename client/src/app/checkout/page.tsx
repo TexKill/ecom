@@ -29,7 +29,7 @@ export default function CheckoutPage() {
     useCartStore();
 
   const savedAddressParts = shippingAddress.address
-    ? shippingAddress.address.split(",").map((part) => part.trim())
+    ? shippingAddress.address.split(",").map((part: string) => part.trim())
     : [];
   const savedStreetAddress = savedAddressParts[0] || "";
   const savedApartment = savedAddressParts.slice(1).join(", ");
