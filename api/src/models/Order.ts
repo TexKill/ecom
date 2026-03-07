@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IOrder, IOrderItem } from "../types";
+import { ORDER_STATUSES } from "../types/shared";
 
 const orderItemSchema = new Schema<IOrderItem>({
   name: { type: String, required: true },
@@ -35,7 +36,7 @@ const orderSchema = new Schema<IOrder>(
     deliveredAt: { type: Date },
     status: {
       type: String,
-      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      enum: ORDER_STATUSES,
       required: true,
       default: "pending",
     },

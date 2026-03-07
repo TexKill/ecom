@@ -1,3 +1,11 @@
+import type {
+  FavoriteItemBase,
+  OrderItemBase,
+  OrderStatus,
+  PaymentResult,
+  ShippingAddress,
+} from "../../../api/src/types/shared";
+
 export interface IUser {
   _id: string;
   name: string;
@@ -32,47 +40,18 @@ export interface IProduct {
   countInStock: number;
 }
 
-export interface IFavoriteItem {
-  productId: string;
-  name: string;
-  image: string;
-  price: number;
-  countInStock: number;
-}
+export interface IFavoriteItem extends FavoriteItemBase<string> {}
 
-export interface IOrderItem {
-  name: string;
-  qty: number;
-  image: string;
-  price: number;
-  product: string;
-}
-
-export type OrderStatus =
-  | "pending"
-  | "processing"
-  | "shipped"
-  | "delivered"
-  | "cancelled";
+export type { OrderStatus, ShippingAddress };
+export interface IOrderItem extends OrderItemBase<string> {}
 
 export interface IOrder {
   _id: string;
   user: string | IUser;
   orderItems: IOrderItem[];
-  shippingAddress: {
-    address: string;
-    city: string;
-    phoneNumber?: string;
-    postalCode: string;
-    country: string;
-  };
+  shippingAddress: ShippingAddress;
   paymentMethod: string;
-  paymentResult?: {
-    id?: string;
-    status?: string;
-    update_time?: string;
-    email_address?: string;
-  };
+  paymentResult?: Partial<PaymentResult>;
   shippingPrice: number;
   totalPrice: number;
   isPaid: boolean;

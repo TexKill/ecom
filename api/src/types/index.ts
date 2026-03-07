@@ -1,28 +1,18 @@
 import { Document, Types } from "mongoose";
+import type {
+  CartItemBase,
+  FavoriteItemBase,
+  OrderItemBase,
+  OrderStatus,
+  PaymentResult,
+  ShippingAddress,
+} from "./shared";
 
-export type OrderStatus =
-  | "pending"
-  | "processing"
-  | "shipped"
-  | "delivered"
-  | "cancelled";
+export type { OrderStatus } from "./shared";
 
-export interface ICartItem {
-  productId: Types.ObjectId;
-  name: string;
-  image: string;
-  price: number;
-  countInStock: number;
-  qty: number;
-}
+export interface ICartItem extends CartItemBase<Types.ObjectId> {}
 
-export interface IFavoriteItem {
-  productId: Types.ObjectId;
-  name: string;
-  image: string;
-  price: number;
-  countInStock: number;
-}
+export interface IFavoriteItem extends FavoriteItemBase<Types.ObjectId> {}
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
@@ -59,31 +49,14 @@ export interface IProduct extends Document {
   countInStock: number;
 }
 
-export interface IOrderItem {
-  name: string;
-  qty: number;
-  image: string;
-  price: number;
-  product: Types.ObjectId;
-}
+export interface IOrderItem extends OrderItemBase<Types.ObjectId> {}
 
 export interface IOrder extends Document {
   user: Types.ObjectId;
   orderItems: IOrderItem[];
-  shippingAddress: {
-    address: string;
-    city: string;
-    phoneNumber: string;
-    postalCode: string;
-    country: string;
-  };
+  shippingAddress: ShippingAddress;
   paymentMethod: string;
-  paymentResult?: {
-    id: string;
-    status: string;
-    update_time: string;
-    email_address: string;
-  };
+  paymentResult?: PaymentResult;
   shippingPrice: number;
   totalPrice: number;
   isPaid: boolean;

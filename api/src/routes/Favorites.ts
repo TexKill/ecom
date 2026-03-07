@@ -1,88 +1,48 @@
 import { AuthRequest } from "../types/auth";
 import { Response } from "express";
 import express from "express";
-import { User } from "../models/User";
-import { Product } from "../models/Product";
+import asyncHandler from "express-async-handler";
 import { protect } from "../middleware/Auth";
 import { validateBody } from "../middleware/Validate";
 import { toggleFavoriteSchema } from "../validation/favorites";
+import {
+  clearFavoritesByUserId,
+  getFavoritesByUserId,
+  toggleFavoriteByUserId,
+} from "../services/FavoritesService";
 
 const router = express.Router();
 
 // GET /api/favorites
-router.get("/", protect, async (req: AuthRequest, res: Response) => {
-  try {
-    const user = await User.findById(req.user!._id).select("favorites").lean();
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
-    res.json(user.favorites || []);
-  } catch {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+router.get(
+  "/",
+  protect,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const favorites = await getFavoritesByUserId(req.user!._id.toString());
+    res.json(favorites);
+  }),
+);
 
 // POST /api/favorites/toggle
 router.post(
   "/toggle",
   protect,
   validateBody(toggleFavoriteSchema),
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { productId } = req.body as { productId: string };
-
-      const product = await Product.findById(productId).select(
-        "_id name image price countInStock",
-      );
-
-      if (!product) {
-        res.status(404).json({ message: "Product not found" });
-        return;
-      }
-
-      const user = await User.findById(req.user!._id);
-
-      if (!user) {
-        res.status(404).json({ message: "User not found" });
-        return;
-      }
-
-      const existingIndex = user.favorites.findIndex(
-        (item) => item.productId.toString() === productId,
-      );
-
-      if (existingIndex >= 0) {
-        user.favorites.splice(existingIndex, 1);
-        await user.save();
-        res.json({ action: "removed", items: user.favorites });
-        return;
-      }
-
-      user.favorites.push({
-        productId: product._id,
-        name: product.name,
-        image: product.image,
-        price: product.price,
-        countInStock: product.countInStock,
-      } as any);
-
-      await user.save();
-      res.json({ action: "added", items: user.favorites });
-    } catch {
-      res.status(500).json({ message: "Server error" });
-    }
-  },
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { productId } = req.body as { productId: string };
+    const result = await toggleFavoriteByUserId(req.user!._id.toString(), productId);
+    res.json(result);
+  }),
 );
 
 // DELETE /api/favorites
-router.delete("/", protect, async (req: AuthRequest, res: Response) => {
-  try {
-    await User.findByIdAndUpdate(req.user!._id, { favorites: [] });
+router.delete(
+  "/",
+  protect,
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    await clearFavoritesByUserId(req.user!._id.toString());
     res.json({ message: "Favorites cleared" });
-  } catch {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+  }),
+);
 
 export default router;

@@ -4,6 +4,7 @@ import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/auth";
 import { User } from "../models/User";
 import { IUser } from "../types";
+import { env } from "../config/env";
 
 interface JwtPayload {
   id: string;
@@ -19,10 +20,7 @@ export const protect = asyncHandler(
     ) {
       try {
         token = req.headers.authorization.split(" ")[1];
-        const decoded = jwt.verify(
-          token,
-          process.env.JWT_SECRET as string,
-        ) as JwtPayload;
+        const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
         req.user = (await User.findById(decoded.id).select(
           "-password",

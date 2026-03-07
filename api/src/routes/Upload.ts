@@ -6,16 +6,24 @@ import asyncHandler from "express-async-handler";
 import { protect } from "../middleware/Auth";
 import { admin } from "../middleware/Admin";
 import { AuthRequest } from "../types/auth";
+import { env } from "../config/env";
+import { createRateLimit } from "../middleware/RateLimit";
 
 const router = express.Router();
+const uploadRateLimit = createRateLimit({
+  bucket: "upload",
+  windowMs: env.UPLOAD_RATE_LIMIT_WINDOW_MS,
+  maxRequests: env.UPLOAD_RATE_LIMIT_MAX_REQUESTS,
+  message: "Too many upload requests. Please try again later.",
+});
 
 /* ================================
    Cloudinary Config
 ================================ */
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET,
 });
 
 /* ================================
@@ -47,6 +55,7 @@ const upload = multer({
 ================================ */
 router.post(
   "/",
+  uploadRateLimit,
   protect,
   admin,
   upload.single("image"),

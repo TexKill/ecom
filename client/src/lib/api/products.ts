@@ -1,3 +1,5 @@
+import { clientEnv } from "../env";
+
 export interface ProductQueryParams {
   pageNumber?: number;
   pageSize?: number;
@@ -9,7 +11,7 @@ export interface ProductQueryParams {
   sort?: string;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
+const BASE_URL = clientEnv.NEXT_PUBLIC_API_URL;
 
 export const fetchProducts = async (params: ProductQueryParams) => {
   const query = new URLSearchParams();

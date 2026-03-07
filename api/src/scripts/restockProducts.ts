@@ -1,16 +1,15 @@
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { restockProductsRandom } from "../utils/autoRestock";
-
-dotenv.config();
+import { env } from "../config/env";
+import { logger } from "../utils/logger";
 
 const run = async () => {
   try {
-    await mongoose.connect(process.env.MONGOOSEDB_URL as string);
+    await mongoose.connect(env.MONGOOSEDB_URL);
     const updatedCount = await restockProductsRandom();
-    console.log(`[Restock] Random restock complete: ${updatedCount} products updated`);
+    logger.info("Random restock complete", { updatedCount });
   } catch (error) {
-    console.error("[Restock] Failed:", error);
+    logger.error("Random restock failed", { error });
     process.exitCode = 1;
   } finally {
     await mongoose.disconnect();
@@ -18,4 +17,3 @@ const run = async () => {
 };
 
 void run();
-

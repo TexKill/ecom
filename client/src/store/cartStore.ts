@@ -1,15 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { IProduct } from "../types";
+import { IProduct, ShippingAddress } from "../types";
 import axios from "axios";
-
-export interface ShippingAddress {
-  address: string;
-  city: string;
-  phoneNumber: string;
-  postalCode: string;
-  country: string;
-}
+import { clientEnv } from "../lib/env";
 
 interface CartItem extends Pick<
   IProduct,
@@ -40,8 +33,7 @@ interface CartState {
   saveShippingAddress: (address: ShippingAddress) => void;
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
+const API_BASE_URL = clientEnv.NEXT_PUBLIC_API_URL;
 
 const syncCartToServer = async (items: CartItem[], token: string) => {
   try {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { objectIdSchema } from "./common";
+import { ORDER_STATUSES } from "../types/shared";
 
 export const createOrderSchema = z.object({
   orderItems: z
@@ -28,7 +29,7 @@ export const payOrderSchema = z.object({
 });
 
 export const updateOrderStatusSchema = z.object({
-  status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled"]),
+  status: z.enum(ORDER_STATUSES),
 });
 
 export const orderIdParamSchema = z.object({

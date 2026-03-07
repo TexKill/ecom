@@ -1,8 +1,6 @@
 import express, { Response } from "express";
 import { AuthRequest } from "../types/auth";
 import asyncHandler from "express-async-handler";
-import { User } from "../models/User";
-import generateToken from "../utils/tokenGenerate";
 import { protect } from "../middleware/Auth";
 import { validateBody } from "../middleware/Validate";
 import {
@@ -10,31 +8,34 @@ import {
   registerSchema,
   updateProfileSchema,
 } from "../validation/user";
+import { createRateLimit } from "../middleware/RateLimit";
+import { env } from "../config/env";
+import {
+  getUserProfile,
+  loginUser,
+  refreshUserSession,
+  registerUser,
+  updateUserProfile,
+} from "../services/UserService";
 
 const userRoute = express.Router();
+const authRateLimit = createRateLimit({
+  bucket: "auth",
+  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+  maxRequests: env.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  message: "Too many authentication attempts. Please try again later.",
+});
 
 // @desc  Login
 // @route POST /api/users/login
 userRoute.post(
   "/login",
+  authRateLimit,
   validateBody(loginSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id),
-        createdAt: user.createdAt,
-      });
-    } else {
-      res.status(401);
-      throw new Error("Invalid email or password");
-    }
+    const user = await loginUser(email, password);
+    res.json(user);
   }),
 );
 
@@ -42,32 +43,12 @@ userRoute.post(
 // @route POST /api/users/register
 userRoute.post(
   "/register",
+  authRateLimit,
   validateBody(registerSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { firstName, lastName, email, password } = req.body;
-    const name = `${firstName} ${lastName}`.trim();
-    const userExists = await User.findOne({ email });
-
-    if (userExists) {
-      res.status(400);
-      throw new Error("User already exists");
-    }
-
-    const user = await User.create({ name, email, password });
-
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        token: generateToken(user._id),
-        createdAt: user.createdAt,
-      });
-    } else {
-      res.status(400);
-      throw new Error("Invalid user data");
-    }
+    const user = await registerUser(firstName, lastName, email, password);
+    res.status(201).json(user);
   }),
 );
 
@@ -77,20 +58,8 @@ userRoute.get(
   "/profile",
   protect,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const user = await User.findById(req.user?._id);
-
-    if (user) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        createdAt: user.createdAt,
-      });
-    } else {
-      res.status(404);
-      throw new Error("User not found");
-    }
+    const user = await getUserProfile(req.user!._id.toString());
+    res.json(user);
   }),
 );
 
@@ -101,26 +70,8 @@ userRoute.put(
   protect,
   validateBody(updateProfileSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const user = await User.findById(req.user?._id);
-
-    if (user) {
-      user.name = req.body.name || user.name;
-      user.email = req.body.email || user.email;
-      if (req.body.password) {
-        user.password = req.body.password;
-      }
-      const updatedUser = await user.save();
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        isAdmin: updatedUser.isAdmin,
-        token: generateToken(updatedUser._id),
-      });
-    } else {
-      res.status(404);
-      throw new Error("User not found");
-    }
+    const updatedUser = await updateUserProfile(req.user!._id.toString(), req.body);
+    res.json(updatedUser);
   }),
 );
 
@@ -130,21 +81,8 @@ userRoute.post(
   "/refresh",
   protect,
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const user = await User.findById(req.user?._id);
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User not found");
-    }
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      token: generateToken(user._id),
-      createdAt: user.createdAt,
-    });
+    const user = await refreshUserSession(req.user!._id.toString());
+    res.json(user);
   }),
 );
 

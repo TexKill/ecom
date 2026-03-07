@@ -4,11 +4,12 @@ import { User } from "./models/User";
 import { Product } from "./models/Product";
 import users from "./data/Users";
 import products from "./data/Products";
+import { env } from "./config/env";
 
 const router = express.Router();
 
 router.use((req: Request, res: Response, next) => {
-  const seedKey = process.env.SEED_KEY;
+  const seedKey = env.SEED_KEY;
   const providedKey = req.header("x-seed-key");
 
   if (!seedKey || providedKey !== seedKey) {
