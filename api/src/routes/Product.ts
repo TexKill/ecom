@@ -17,9 +17,38 @@ import {
   productListQuerySchema,
   updateProductSchema,
 } from "../validation/product";
-import { restockProductsRandom } from "../utils/autoRestock";
+import {
+  getCachedJson,
+  setCachedJson,
+} from "../utils/cache";
+import {
+  buildProductDetailsCacheKey,
+  buildProductFiltersCacheKey,
+  buildProductListCacheKey,
+  PRODUCTS_PUBLIC_CACHE_CONTROL,
+} from "../services/ProductCacheService";
+import {
+  addProductReview,
+  createProduct,
+  deleteProduct,
+  removeProductReview,
+  restockRandomProducts,
+  updateProduct,
+} from "../services/ProductService";
 
 const productRoute = express.Router();
+
+const serializeListQuery = (query: Record<string, unknown>) => {
+  const pairs = Object.entries(query)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (pairs.length === 0) {
+    return "default";
+  }
+
+  return pairs.map(([key, value]) => `${key}=${String(value)}`).join("&");
+};
 
 /* ======================================================
    @desc   Get all products (search + filters + pagination + sorting)
@@ -40,6 +69,22 @@ productRoute.get(
       maxPrice,
       sort,
     } = req.query as any;
+
+    const listCacheKey = buildProductListCacheKey(
+      serializeListQuery(req.query as Record<string, unknown>),
+    );
+    const cachedPayload = await getCachedJson<{
+      products: unknown[];
+      page: number;
+      pages: number;
+      total: number;
+    }>(listCacheKey);
+
+    if (cachedPayload) {
+      res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+      res.json(cachedPayload);
+      return;
+    }
 
     const limit = Number(pageSize);
     const page = Number(pageNumber);
@@ -94,14 +139,19 @@ productRoute.get(
     const products = await Product.find(filter)
       .sort(sortOption)
       .limit(limit)
-      .skip(limit * (page - 1));
+      .skip(limit * (page - 1))
+      .lean();
 
-    res.json({
+    const responsePayload = {
       products,
       page,
       pages: Math.ceil(count / limit),
       total: count,
-    });
+    };
+
+    await setCachedJson(listCacheKey, responsePayload);
+    res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+    res.json(responsePayload);
   }),
 );
 
@@ -112,7 +162,20 @@ productRoute.get(
 ====================================================== */
 productRoute.get(
   "/filters",
-  asyncHandler(async (req: AuthRequest, res: Response) => {
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const filtersCacheKey = buildProductFiltersCacheKey();
+    const cachedPayload = await getCachedJson<{
+      brands: string[];
+      categories: string[];
+      priceRange: { min: number; max: number };
+    }>(filtersCacheKey);
+
+    if (cachedPayload) {
+      res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+      res.json(cachedPayload);
+      return;
+    }
+
     const brands = await Product.distinct("brand");
     const categories = await Product.distinct("category");
 
@@ -134,11 +197,15 @@ productRoute.get(
           }
         : { min: 0, max: 0 };
 
-    res.json({
+    const responsePayload = {
       brands,
       categories,
       priceRange,
-    });
+    };
+
+    await setCachedJson(filtersCacheKey, responsePayload);
+    res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+    res.json(responsePayload);
   }),
 );
 
@@ -151,13 +218,25 @@ productRoute.get(
   "/:id",
   validateParams(productIdParamSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const product = await Product.findById(req.params.id);
+    const productId = String(req.params.id);
+    const detailsCacheKey = buildProductDetailsCacheKey(productId);
+    const cachedProduct = await getCachedJson<unknown>(detailsCacheKey);
+
+    if (cachedProduct) {
+      res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+      res.json(cachedProduct);
+      return;
+    }
+
+    const product = await Product.findById(productId).lean();
 
     if (!product) {
       res.status(404);
       throw new Error("Product not found");
     }
 
+    await setCachedJson(detailsCacheKey, product);
+    res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
     res.json(product);
   }),
 );
@@ -173,34 +252,7 @@ productRoute.post(
   admin,
   validateBody(createProductSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const {
-      name,
-      price,
-      description,
-      descriptionUk,
-      descriptionEn,
-      image,
-      brand,
-      category,
-      countInStock,
-    } = req.body;
-
-    const product = new Product({
-      name,
-      price,
-      description,
-      descriptionUk: descriptionUk || description,
-      descriptionEn: descriptionEn || description,
-      image,
-      brand,
-      category,
-      countInStock,
-      user: req.user?._id,
-      rating: 0,
-      numReviews: 0,
-    });
-
-    const createdProduct = await product.save();
+    const createdProduct = await createProduct(String(req.user?._id), req.body);
     res.status(201).json(createdProduct);
   }),
 );
@@ -217,16 +269,8 @@ productRoute.put(
   validateParams(productIdParamSchema),
   validateBody(updateProductSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      res.status(404);
-      throw new Error("Product not found");
-    }
-
-    Object.assign(product, req.body);
-
-    const updatedProduct = await product.save();
+    const productId = String(req.params.id);
+    const updatedProduct = await updateProduct(productId, req.body);
     res.json(updatedProduct);
   }),
 );
@@ -242,14 +286,8 @@ productRoute.delete(
   admin,
   validateParams(productIdParamSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      res.status(404);
-      throw new Error("Product not found");
-    }
-
-    await product.deleteOne();
+    const productId = String(req.params.id);
+    await deleteProduct(productId);
     res.json({ message: "Product removed" });
   }),
 );
@@ -263,8 +301,8 @@ productRoute.post(
   "/restock-random",
   protect,
   admin,
-  asyncHandler(async (req: AuthRequest, res: Response) => {
-    const updatedCount = await restockProductsRandom();
+  asyncHandler(async (_req: AuthRequest, res: Response) => {
+    const updatedCount = await restockRandomProducts();
     res.json({
       message: `Random restock complete: ${updatedCount} products updated`,
       updatedCount,
@@ -283,36 +321,14 @@ productRoute.post(
   validateParams(productIdParamSchema),
   validateBody(createReviewSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { rating, comment } = req.body;
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      res.status(404);
-      throw new Error("Product not found");
-    }
-
-    const alreadyReviewed = product.reviews.find(
-      (r) => r.user.toString() === req.user?._id.toString(),
-    );
-
-    if (alreadyReviewed) {
-      res.status(400);
-      throw new Error("Product already reviewed");
-    }
-
-    product.reviews.push({
-      name: req.user?.name as string,
-      rating: Number(rating),
-      comment,
-      user: req.user?._id,
-    } as any);
-
-    product.numReviews = product.reviews.length;
-    product.rating =
-      product.reviews.reduce((acc, r) => acc + r.rating, 0) /
-      product.reviews.length;
-
-    await product.save();
+    const productId = String(req.params.id);
+    await addProductReview({
+      productId,
+      userId: String(req.user?._id),
+      userName: String(req.user?.name || ""),
+      rating: Number(req.body.rating),
+      comment: String(req.body.comment),
+    });
     res.status(201).json({ message: "Review added" });
   }),
 );
@@ -329,32 +345,7 @@ productRoute.delete(
   validateParams(productReviewParamsSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id, reviewId } = req.params as { id: string; reviewId: string };
-    const product = await Product.findById(id);
-
-    if (!product) {
-      res.status(404);
-      throw new Error("Product not found");
-    }
-
-    const reviewIndex = product.reviews.findIndex(
-      (r: any) => r._id.toString() === reviewId,
-    );
-
-    if (reviewIndex < 0) {
-      res.status(404);
-      throw new Error("Review not found");
-    }
-
-    product.reviews.splice(reviewIndex, 1);
-
-    product.numReviews = product.reviews.length;
-    product.rating =
-      product.reviews.length === 0
-        ? 0
-        : product.reviews.reduce((acc, r) => acc + r.rating, 0) /
-          product.reviews.length;
-
-    await product.save();
+    await removeProductReview(id, reviewId);
     res.json({ message: "Review removed" });
   }),
 );

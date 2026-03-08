@@ -8,7 +8,7 @@
     "start": "npx ts-node src/index.ts",
     "build": "tsc",
     "prod": "node dist/index.js",
-    "test": "node -r ts-node/register --test \"src/**/*.test.ts\"",
+    "test": "node -r ts-node/register --test src/**/*.test.ts",
     "restock": "ts-node src/scripts/restockProducts.ts"
   },
   "keywords": [],
@@ -27,6 +27,7 @@
     "mongoose": "^9.2.1",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "redis": "^5.11.0",
     "streamifier": "^0.1.1",
     "zod": "^4.3.6"
   },

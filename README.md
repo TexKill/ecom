@@ -15,6 +15,7 @@ A full-stack e-commerce application with separate `api` (Express + MongoDB) and 
 - Cloudinary image uploads
 - Newsletter email subscription
 - Rate limiting for API/auth/upload/callback routes
+- Redis caching for product list/details/filters with automatic invalidation on product changes
 
 ## Tech Stack
 
@@ -22,6 +23,7 @@ A full-stack e-commerce application with separate `api` (Express + MongoDB) and 
 
 - Node.js, Express 5, TypeScript
 - MongoDB + Mongoose
+- Redis (optional but recommended for caching)
 - Zod (validation)
 - JWT + bcryptjs
 - Cloudinary + multer
@@ -97,6 +99,7 @@ Services:
 
 - Client: `http://localhost:3000`
 - API: `http://localhost:9000`
+- Redis: `localhost:6379`
 
 Useful commands:
 
@@ -184,6 +187,12 @@ Optional LiqPay variables (must be set together):
 - `LIQPAY_PUBLIC_KEY`
 - `LIQPAY_PRIVATE_KEY`
 - `LIQPAY_SANDBOX`
+
+Optional cache variables:
+
+- `REDIS_URL` (when omitted, cache layer is disabled)
+- `REDIS_KEY_PREFIX`
+- `CACHE_TTL_SECONDS`
 
 Client variable:
 

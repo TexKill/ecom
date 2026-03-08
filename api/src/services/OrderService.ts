@@ -3,6 +3,7 @@ import { Order } from "../models/Order";
 import { PaymentLog } from "../models/PaymentLog";
 import { Product } from "../models/Product";
 import { env } from "../config/env";
+import { invalidateProductCaches } from "./ProductCacheService";
 import {
   decodeLiqPayPayload,
   encodeLiqPayPayload,
@@ -91,6 +92,7 @@ export const createOrder = async (
   if (stockResult.modifiedCount !== stockUpdateOps.length) {
     throw httpError(409, "Unable to reserve stock for one or more products");
   }
+  await invalidateProductCaches();
 
   const order = new Order({
     user: userId,
@@ -498,4 +500,3 @@ export const deleteOrder = async (orderId: string) => {
   await order.deleteOne();
   return { message: "Order removed" };
 };
-

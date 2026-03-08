@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - appnet
+
   api:
     build:
       context: ./api
@@ -7,8 +15,11 @@ services:
       - ./api/.env
     environment:
       PORT: ${API_PORT:-9000}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     ports:
       - "${API_PORT:-9000}:${API_PORT:-9000}"
+    depends_on:
+      - redis
     restart: unless-stopped
     networks:
       - appnet

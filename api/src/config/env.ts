@@ -42,6 +42,9 @@ const envSchema = z
     UPLOAD_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(20),
     LIQPAY_CALLBACK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
     LIQPAY_CALLBACK_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(120),
+    REDIS_URL: optionalTrimmedString,
+    REDIS_KEY_PREFIX: z.string().trim().default("ecom"),
+    CACHE_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
   })
   .superRefine((data, ctx) => {
     const hasPublic = Boolean(data.LIQPAY_PUBLIC_KEY);

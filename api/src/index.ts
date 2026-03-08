@@ -14,9 +14,11 @@ import { env } from "./config/env";
 import { logger } from "./utils/logger";
 import { requestLogger } from "./middleware/RequestLogger";
 import { createRateLimit } from "./middleware/RateLimit";
+import { initRedisConnection } from "./utils/redis";
 
 const app = express();
 const PORT = env.PORT;
+app.set("etag", "strong");
 const apiRateLimit = createRateLimit({
   bucket: "api",
   windowMs: env.RATE_LIMIT_WINDOW_MS,
@@ -41,6 +43,8 @@ mongoose
   .connect(env.MONGOOSEDB_URL)
   .then(() => logger.info("Connected to MongoDB"))
   .catch((err: Error) => logger.error("Error connecting to MongoDB", { err }));
+
+void initRedisConnection();
 
 if (env.ENABLE_SEED_ROUTES) {
   app.use("/api/seed", databaseSeeder);
