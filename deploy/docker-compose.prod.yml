@@ -1,0 +1,28 @@
+services:
+  api:
+    image: ghcr.io/${GHCR_OWNER}/ecom-api:latest
+    env_file:
+      - ./.env
+    environment:
+      PORT: ${API_PORT:-9000}
+    restart: unless-stopped
+    networks:
+      - appnet
+
+  client:
+    image: ghcr.io/${GHCR_OWNER}/ecom-client:latest
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
