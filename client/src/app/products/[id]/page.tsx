@@ -1,25 +1,38 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, Heart, ShoppingCart, Star, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Heart,
+  ShoppingCart,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { IProduct } from "@/types";
-import { createProductReview, deleteProductReview, getProductById } from "@/lib/api";
+import {
+  createProductReview,
+  deleteProductReview,
+  getProductById,
+} from "@/lib/api";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
-const fetchProduct = async (id: string): Promise<IProduct> => getProductById(id);
+const fetchProduct = async (id: string): Promise<IProduct> =>
+  getProductById(id);
 export default function ProductPage() {
   const { t, lang } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const queryClient = useQueryClient();
 
   const addItem = useCartStore((s) => s.addItem);
   const user = useAuthStore((s) => s.user);
@@ -51,10 +64,11 @@ export default function ProductPage() {
     data: product,
     isLoading,
     isError,
-    refetch,
   } = useQuery({
     queryKey: ["product", id],
     queryFn: () => fetchProduct(id),
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const hasUserReviewed = useMemo(() => {
@@ -83,7 +97,10 @@ export default function ProductPage() {
       <div className="mx-auto max-w-7xl px-4 py-16 text-center">
         <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
         <h2 className="mb-4 text-2xl font-bold">{t.product.notFound}</h2>
-        <button onClick={() => router.push("/")} className="text-blue-500 hover:underline">
+        <button
+          onClick={() => router.push("/")}
+          className="text-blue-500 hover:underline"
+        >
           {t.product.returnHome}
         </button>
       </div>
@@ -102,7 +119,7 @@ export default function ProductPage() {
       });
       setReviewComment("");
       setReviewRating(5);
-      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ["product", id] });
       showToast(t.product.submitSuccess);
     } catch {
       setReviewError(t.product.submitFail);
@@ -117,7 +134,7 @@ export default function ProductPage() {
       setReviewDeletingId(reviewId);
       setReviewError("");
       await deleteProductReview(product._id, reviewId);
-      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ["product", id] });
       showToast(t.product.removeSuccess);
     } catch {
       setReviewError(t.product.removeFail);
@@ -137,7 +154,7 @@ export default function ProductPage() {
       />
 
       <Link
-        href="/"
+        href="/products"
         className="mb-8 inline-flex items-center gap-2 text-gray-600 transition-colors hover:text-red-500"
       >
         <ArrowLeft size={20} />
@@ -163,7 +180,9 @@ export default function ProductPage() {
         </div>
 
         <div className="flex flex-col">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
+            {product.name}
+          </h1>
           <p className="mb-6 text-lg text-gray-500">{product.brand}</p>
 
           <div className="mb-6 flex items-center gap-4">
@@ -180,12 +199,19 @@ export default function ProductPage() {
                 />
               ))}
             </div>
-            <span className="text-gray-500">{product.numReviews} {t.product.reviewsCount}</span>
+            <span className="text-gray-500">
+              {product.numReviews} {t.product.reviewsCount}
+            </span>
           </div>
 
-          <div className="mb-8 text-4xl font-bold text-red-500">{"\u20B4"}{product.price.toFixed(2)}</div>
+          <div className="mb-8 text-4xl font-bold text-red-500">
+            {"\u20B4"}
+            {product.price.toFixed(2)}
+          </div>
 
-          <p className="mb-8 leading-relaxed text-gray-700">{localizedDescription}</p>
+          <p className="mb-8 leading-relaxed text-gray-700">
+            {localizedDescription}
+          </p>
 
           <div className="mb-8 border-t border-gray-200 py-6">
             <div className="flex items-center justify-between text-lg">
@@ -210,12 +236,17 @@ export default function ProductPage() {
                 const wasFavorite = isFavorite;
                 await toggleFavorite(product, user?.token);
                 showToast(
-                  wasFavorite ? t.product.removedFromFavorites : t.product.addedToFavorites,
+                  wasFavorite
+                    ? t.product.removedFromFavorites
+                    : t.product.addedToFavorites,
                 );
               }}
               className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 py-4 text-lg font-medium text-gray-700 transition-colors hover:border-red-500 hover:text-red-500"
             >
-              <Heart size={24} className={isFavorite ? "fill-current text-red-500" : ""} />
+              <Heart
+                size={24}
+                className={isFavorite ? "fill-current text-red-500" : ""}
+              />
               {isFavorite ? t.product.inFavorites : t.product.addToFavorites}
             </button>
 
@@ -225,7 +256,9 @@ export default function ProductPage() {
               className="flex w-full items-center justify-center gap-3 rounded-lg bg-black py-4 text-lg font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
               <ShoppingCart size={24} />
-              {product.countInStock === 0 ? t.product.outOfStock : t.product.addToCart}
+              {product.countInStock === 0
+                ? t.product.outOfStock
+                : t.product.addToCart}
             </button>
           </div>
         </div>
@@ -233,13 +266,18 @@ export default function ProductPage() {
 
       <section className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-xl border border-gray-200 p-5">
-          <h2 className="mb-4 text-xl font-semibold">{t.product.reviewsTitle}</h2>
+          <h2 className="mb-4 text-xl font-semibold">
+            {t.product.reviewsTitle}
+          </h2>
           {product.reviews.length === 0 && (
             <p className="text-sm text-gray-500">{t.product.noReviews}</p>
           )}
           <div className="space-y-4">
             {product.reviews.map((review) => (
-              <div key={review._id || review.user} className="rounded border border-gray-100 p-3">
+              <div
+                key={review._id || review.user}
+                className="rounded border border-gray-100 p-3"
+              >
                 <div className="mb-1 flex items-center justify-between gap-3">
                   <p className="font-medium">{review.name}</p>
                   <div className="flex items-center gap-1">
@@ -272,7 +310,9 @@ export default function ProductPage() {
                       className="inline-flex items-center gap-1 text-xs text-red-500 hover:text-red-700 disabled:text-gray-400"
                     >
                       <Trash2 size={12} />
-                      {reviewDeletingId === review._id ? t.product.removing : t.product.delete}
+                      {reviewDeletingId === review._id
+                        ? t.product.removing
+                        : t.product.delete}
                     </button>
                   )}
                 </div>
@@ -282,7 +322,9 @@ export default function ProductPage() {
         </div>
 
         <div className="rounded-xl border border-gray-200 p-5">
-          <h2 className="mb-4 text-xl font-semibold">{t.product.writeReview}</h2>
+          <h2 className="mb-4 text-xl font-semibold">
+            {t.product.writeReview}
+          </h2>
           {!user && (
             <p className="text-sm text-gray-600">
               {t.product.please}{" "}
@@ -303,7 +345,9 @@ export default function ProductPage() {
           {user && !hasUserReviewed && (
             <form onSubmit={submitReview} className="space-y-3">
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">{t.product.rating}</span>
+                <span className="mb-1 block text-xs font-medium text-gray-600">
+                  {t.product.rating}
+                </span>
                 <select
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
                   value={reviewRating}
@@ -318,7 +362,9 @@ export default function ProductPage() {
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-600">{t.product.comment}</span>
+                <span className="mb-1 block text-xs font-medium text-gray-600">
+                  {t.product.comment}
+                </span>
                 <textarea
                   className="min-h-28 w-full rounded border border-gray-300 px-3 py-2 text-sm"
                   value={reviewComment}
@@ -327,14 +373,18 @@ export default function ProductPage() {
                 />
               </label>
 
-              {reviewError && <p className="text-sm text-red-500">{reviewError}</p>}
+              {reviewError && (
+                <p className="text-sm text-red-500">{reviewError}</p>
+              )}
 
               <button
                 type="submit"
                 disabled={reviewSubmitting}
                 className="w-full rounded bg-black py-2 text-sm text-white hover:bg-red-500 disabled:bg-gray-400"
               >
-                {reviewSubmitting ? t.product.submitting : t.product.submitReview}
+                {reviewSubmitting
+                  ? t.product.submitting
+                  : t.product.submitReview}
               </button>
             </form>
           )}
@@ -343,6 +393,3 @@ export default function ProductPage() {
     </div>
   );
 }
-
-
-

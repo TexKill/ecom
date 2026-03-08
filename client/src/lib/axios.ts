@@ -1,5 +1,6 @@
 import axios from "axios";
 import { clientEnv } from "./env";
+import { setAuthCookies, clearAuthCookies } from "./cookies";
 
 const API_BASE_URL = clientEnv.NEXT_PUBLIC_API_URL;
 
@@ -7,6 +8,7 @@ const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
   },
 });
 
@@ -27,17 +29,6 @@ type StoredUser = {
 
 let refreshPromise: Promise<string | null> | null = null;
 
-const setAuthCookies = (user: StoredUser) => {
-  const maxAge = 60 * 60 * 24 * 30;
-  document.cookie = `auth_token=${encodeURIComponent(user.token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-  document.cookie = `auth_is_admin=${user.isAdmin ? "1" : "0"}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-};
-
-const clearAuthCookies = () => {
-  document.cookie = "auth_token=; Path=/; Max-Age=0; SameSite=Lax";
-  document.cookie = "auth_is_admin=; Path=/; Max-Age=0; SameSite=Lax";
-};
-
 const persistAuthUser = (user: StoredUser) => {
   localStorage.setItem("user", JSON.stringify(user));
 
@@ -52,7 +43,7 @@ const persistAuthUser = (user: StoredUser) => {
     // ignore malformed auth payload
   }
 
-  setAuthCookies(user);
+  setAuthCookies(user.token, user.isAdmin);
 };
 
 const clearAuthData = () => {

@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
 import databaseSeeder from "./databaseSeeder";
 import userRoute from "./routes/User";
 import productRoute from "./routes/Product";
@@ -24,11 +26,12 @@ const apiRateLimit = createRateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
   maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
 });
-const corsOrigins = env.CORS_ORIGIN
-  .split(",")
+const corsOrigins = env.CORS_ORIGIN.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+app.use(helmet());
+app.use(compression());
 app.use(express.json());
 app.use(requestLogger);
 app.use("/api", apiRateLimit);

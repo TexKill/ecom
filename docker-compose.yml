@@ -23,6 +23,12 @@ services:
     restart: unless-stopped
     networks:
       - appnet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${API_PORT:-9000}/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   client:
     build:

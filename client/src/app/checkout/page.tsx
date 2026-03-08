@@ -48,7 +48,6 @@ export default function CheckoutPage() {
   );
   const [country, setCountry] = useState(shippingAddress.country || "");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
-  const [couponCode, setCouponCode] = useState("");
   const [saveInfo, setSaveInfo] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -108,14 +107,6 @@ export default function CheckoutPage() {
   const total = subtotal + shippingPrice;
 
   if (!hasHydrated || !user || items.length === 0) return null;
-
-  const applyCoupon = () => {
-    if (!couponCode.trim()) {
-      setMessage(t.checkout.couponEnter);
-      return;
-    }
-    setMessage(t.checkout.couponNext);
-  };
 
   const getInputClass = (field: RequiredField) =>
     `w-full rounded border px-4 py-3 outline-none ${
@@ -187,8 +178,10 @@ export default function CheckoutPage() {
 
       await clearCart(user.token);
       router.push("/orders");
-    } catch {
-      setMessage(t.checkout.orderFail);
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      setMessage(message || t.checkout.orderFail);
     } finally {
       setSubmitting(false);
     }
@@ -475,23 +468,6 @@ export default function CheckoutPage() {
               />
               <span>{t.checkout.cod}</span>
             </label>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-            <input
-              type="text"
-              placeholder={t.checkout.couponCode}
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              className="rounded border border-gray-300 px-4 py-3 text-sm outline-none focus:border-red-400"
-            />
-            <button
-              type="button"
-              onClick={applyCoupon}
-              className="rounded bg-red-500 px-6 py-3 text-sm font-medium text-white hover:bg-red-600"
-            >
-              {t.checkout.applyCoupon}
-            </button>
           </div>
 
           <button

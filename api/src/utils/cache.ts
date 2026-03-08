@@ -50,9 +50,17 @@ export const deleteCacheByPattern = async (pattern: string) => {
   if (!client) return 0;
 
   try {
-    const keys = await client.keys(pattern);
-    if (keys.length === 0) return 0;
-    return client.del(keys);
+    let deleted = 0;
+
+    for await (const key of client.scanIterator({
+      MATCH: pattern,
+      COUNT: 100,
+    })) {
+      await client.del(key);
+      deleted++;
+    }
+
+    return deleted;
   } catch (error) {
     logger.warn("Cache pattern deletion failed", { pattern, error });
     return 0;

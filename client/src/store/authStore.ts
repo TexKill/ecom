@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { setAuthCookies, clearAuthCookies } from "@/lib/cookies";
 
 interface User {
   _id: string;
@@ -17,19 +18,6 @@ interface AuthState {
   logout: () => void;
 }
 
-const setAuthCookies = (user: User) => {
-  if (typeof document === "undefined") return;
-  const maxAge = 60 * 60 * 24 * 30;
-  document.cookie = `auth_token=${encodeURIComponent(user.token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-  document.cookie = `auth_is_admin=${user.isAdmin ? "1" : "0"}; Path=/; Max-Age=${maxAge}; SameSite=Lax`;
-};
-
-const clearAuthCookies = () => {
-  if (typeof document === "undefined") return;
-  document.cookie = "auth_token=; Path=/; Max-Age=0; SameSite=Lax";
-  document.cookie = "auth_is_admin=; Path=/; Max-Age=0; SameSite=Lax";
-};
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -37,7 +25,7 @@ export const useAuthStore = create<AuthState>()(
       hasHydrated: false,
       setHasHydrated: (value) => set({ hasHydrated: value }),
       setUser: (user) => {
-        setAuthCookies(user);
+        setAuthCookies(user.token, user.isAdmin);
         set({ user });
       },
       logout: () => {
@@ -49,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
       name: "auth",
       onRehydrateStorage: () => (state) => {
         if (state?.user) {
-          setAuthCookies(state.user);
+          setAuthCookies(state.user.token, state.user.isAdmin);
         } else {
           clearAuthCookies();
         }
