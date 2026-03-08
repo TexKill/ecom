@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,14 +19,6 @@ export default function CartPage() {
     useCartStore();
   const user = useAuthStore((s) => s.user);
   const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const nextInputs: Record<string, string> = {};
-    items.forEach((item) => {
-      nextInputs[item._id] = String(item.qty);
-    });
-    setQtyInputs(nextInputs);
-  }, [items]);
 
   const clampQty = (value: number, max: number) =>
     Math.max(1, Math.min(max, value));

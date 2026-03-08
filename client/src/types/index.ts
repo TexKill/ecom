@@ -40,10 +40,10 @@ export interface IProduct {
   countInStock: number;
 }
 
-export interface IFavoriteItem extends FavoriteItemBase<string> {}
+export type IFavoriteItem = FavoriteItemBase<string>;
 
 export type { OrderStatus, ShippingAddress };
-export interface IOrderItem extends OrderItemBase<string> {}
+export type IOrderItem = OrderItemBase<string>;
 
 export interface IOrder {
   _id: string;
