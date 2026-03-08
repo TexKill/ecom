@@ -1,28 +1,28 @@
 ﻿# Ecom Full-Stack
 
-Повноцінний full-stack e-commerce застосунок з окремими `api` (Express + MongoDB) та `client` (Next.js App Router).
+A full-stack e-commerce application with separate `api` (Express + MongoDB) and `client` (Next.js App Router) services.
 
-## Що реалізовано
+## Implemented Features
 
-- JWT-автентифікація, профіль користувача, оновлення профілю, refresh сесії
-- Ролі `user/admin` + захист адмін-функцій
-- Каталог товарів: пошук, фільтри, сортування, пагінація
-- CRUD товарів для адміна
-- Відгуки до товарів
-- Кошик та обране (favorites)
-- Оформлення замовлення, історія замовлень, керування статусами
-- LiqPay checkout + callback + журнал платежів
-- Завантаження зображень у Cloudinary
-- Підписка на email-розсилку
-- Rate limiting для API/auth/upload/callback
+- JWT authentication, user profile, profile update, session refresh
+- `user/admin` roles with protected admin actions
+- Product catalog: search, filtering, sorting, pagination
+- Admin product CRUD
+- Product reviews
+- Cart and favorites
+- Checkout flow, order history, order status management
+- LiqPay checkout + callback + payment logs
+- Cloudinary image uploads
+- Newsletter email subscription
+- Rate limiting for API/auth/upload/callback routes
 
-## Технології
+## Tech Stack
 
 ### Backend (`/api`)
 
 - Node.js, Express 5, TypeScript
 - MongoDB + Mongoose
-- Zod (валідація)
+- Zod (validation)
 - JWT + bcryptjs
 - Cloudinary + multer
 
@@ -33,7 +33,7 @@
 - Zustand
 - TanStack React Query
 
-## Структура проєкту
+## Project Structure
 
 ```text
 ecom/
@@ -57,7 +57,7 @@ ecom/
 `-- docker-compose.yml
 ```
 
-## Локальний запуск
+## Local Development
 
 ### 1) Backend
 
@@ -68,7 +68,7 @@ cp .env.example .env
 npm run dev
 ```
 
-API за замовчуванням: `http://localhost:9000`
+Default API URL: `http://localhost:9000`
 
 ### 2) Frontend
 
@@ -78,44 +78,44 @@ npm install
 npm run dev
 ```
 
-Client за замовчуванням: `http://localhost:3000`
+Default client URL: `http://localhost:3000`
 
 ## Docker
 
-Потрібно:
+Requirements:
 
 - Docker Desktop
-- заповнений `api/.env`
+- configured `api/.env`
 
-Запуск з кореня:
+Run from project root:
 
 ```bash
 docker compose up --build -d
 ```
 
-Сервіси:
+Services:
 
 - Client: `http://localhost:3000`
 - API: `http://localhost:9000`
 
-Корисні команди:
+Useful commands:
 
 ```bash
 docker compose logs -f
 docker compose down
 ```
 
-Перевизначення портів/URL:
+Override ports/URL:
 
 ```bash
 API_PORT=9001 NEXT_PUBLIC_API_URL=http://localhost:9001 docker compose up --build -d
 ```
 
-## Environment variables
+## Environment Variables
 
-Зразок: `api/.env.example`
+Template: `api/.env.example`
 
-Критично необхідні для API:
+Required API variables:
 
 - `MONGOOSEDB_URL`
 - `JWT_SECRET`
@@ -123,42 +123,42 @@ API_PORT=9001 NEXT_PUBLIC_API_URL=http://localhost:9001 docker compose up --buil
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
 
-Опціонально для LiqPay (тільки парою):
+Optional LiqPay variables (must be set together):
 
 - `LIQPAY_PUBLIC_KEY`
 - `LIQPAY_PRIVATE_KEY`
 - `LIQPAY_SANDBOX`
 
-Клієнт використовує:
+Client variable:
 
 - `NEXT_PUBLIC_API_URL` (fallback: `http://localhost:9000`)
 
-## Database seeding
+## Database Seeding
 
-Сидінг вимкнений за замовчуванням.
+Seeding is disabled by default.
 
-Увімкнення в `api/.env`:
+Enable in `api/.env`:
 
 ```env
 ENABLE_SEED_ROUTES=true
 SEED_KEY=your_secret_key
 ```
 
-Після цього викликати з заголовком `x-seed-key: your_secret_key`:
+Then call endpoints with header `x-seed-key: your_secret_key`:
 
 - `POST /api/seed/users`
 - `POST /api/seed/products`
 
-## NPM scripts
+## NPM Scripts
 
 ### `api/package.json`
 
 - `npm run dev` - nodemon + ts-node
-- `npm run start` - запуск через ts-node
-- `npm run build` - компіляція TypeScript у `dist`
-- `npm run prod` - запуск `dist/index.js`
-- `npm test` - тести (`src/**/*.test.ts`)
-- `npm run restock` - скрипт рандомного restock
+- `npm run start` - run with ts-node
+- `npm run build` - compile TypeScript to `dist`
+- `npm run prod` - run `dist/index.js`
+- `npm test` - run tests (`src/**/*.test.ts`)
+- `npm run restock` - random restock script
 
 ### `client/package.json`
 
@@ -167,7 +167,7 @@ SEED_KEY=your_secret_key
 - `npm run start`
 - `npm run lint`
 
-## API quick reference
+## API Quick Reference
 
 ### Auth / Users
 
