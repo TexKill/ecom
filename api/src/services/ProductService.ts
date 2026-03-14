@@ -9,14 +9,19 @@ type ProductPayload = {
   descriptionUk?: string;
   descriptionEn?: string;
   image: string;
+  images: string[];
   brand: string;
   category: string;
   countInStock: number;
 };
 
 export const createProduct = async (userId: string, payload: ProductPayload) => {
+  const images = payload.images?.length ? payload.images : [payload.image];
+
   const product = new Product({
     ...payload,
+    image: images[0],
+    images,
     descriptionUk: payload.descriptionUk || payload.description,
     descriptionEn: payload.descriptionEn || payload.description,
     user: userId,
@@ -33,6 +38,10 @@ export const updateProduct = async (productId: string, payload: Partial<ProductP
   const product = await Product.findById(productId);
   if (!product) {
     throw httpError(404, "Product not found");
+  }
+
+  if (payload.images) {
+    payload.image = payload.images[0];
   }
 
   Object.assign(product, payload);

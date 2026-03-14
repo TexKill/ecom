@@ -8,6 +8,8 @@ import { useParams, useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Heart,
   ShoppingCart,
   Star,
@@ -17,16 +19,44 @@ import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { IProduct } from "@/types";
+import ProductCard from "@/components/products/ProductCard";
 import {
   createProductReview,
   deleteProductReview,
   getProductById,
 } from "@/lib/api";
+import { fetchProducts } from "@/lib/api/products";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 const fetchProduct = async (id: string): Promise<IProduct> =>
   getProductById(id);
+
+const SIMILAR_STOP_WORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "monitor",
+  "smartphone",
+  "phone",
+  "tablet",
+  "laptop",
+  "watch",
+  "wireless",
+  "pro",
+  "max",
+  "ultra",
+  "gen",
+]);
+
+const tokenizeProductName = (value: string) =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !SIMILAR_STOP_WORDS.has(token));
+
 export default function ProductPage() {
   const { t, lang } = useLanguage();
   const params = useParams();
@@ -45,6 +75,9 @@ export default function ProductPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewDeletingId, setReviewDeletingId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const toastTimerRef = useRef<number | null>(null);
 
   const showToast = (message: string) => {
@@ -71,6 +104,62 @@ export default function ProductPage() {
     gcTime: 0,
   });
 
+  const { data: similarProductsData } = useQuery({
+    queryKey: ["similar-products", product?.category, product?.brand, product?._id],
+    queryFn: async () => {
+      if (!product) {
+        return { products: [] as IProduct[] };
+      }
+
+      const [categoryResponse, brandResponse] = await Promise.all([
+        fetchProducts({
+          category: product.category,
+          pageNumber: 1,
+          pageSize: 20,
+        }),
+        fetchProducts({
+          brand: product.brand,
+          pageNumber: 1,
+          pageSize: 20,
+        }),
+      ]);
+
+      const mergedProducts = [...categoryResponse.products, ...brandResponse.products];
+      const baseTokens = tokenizeProductName(product.name);
+
+      const uniqueProducts = mergedProducts.filter(
+        (candidate, index, array) =>
+          candidate._id !== product._id &&
+          array.findIndex((item) => item._id === candidate._id) === index,
+      );
+
+      const scoredProducts = uniqueProducts
+        .map((candidate) => {
+          const candidateTokens = tokenizeProductName(candidate.name);
+          const sharedTokenCount = candidateTokens.filter((token) =>
+            baseTokens.includes(token),
+          ).length;
+
+          const score =
+            (candidate.brand === product.brand ? 3 : 0) +
+            (candidate.category === product.category ? 2 : 0) +
+            sharedTokenCount * 5;
+
+          return {
+            candidate,
+            score,
+            sharedTokenCount,
+          };
+        })
+        .filter(({ sharedTokenCount }) => sharedTokenCount > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(({ candidate }) => candidate);
+
+      return { products: scoredProducts.slice(0, 4) };
+    },
+    enabled: Boolean(product),
+  });
+
   const hasUserReviewed = useMemo(() => {
     if (!product || !user) return false;
     return product.reviews.some((r) => r.user === user._id);
@@ -83,6 +172,59 @@ export default function ProductPage() {
     }
     return (product.descriptionEn || product.description || "").trim();
   }, [product, lang]);
+
+  const productImages = useMemo(() => {
+    if (!product) return [];
+    if (product.images?.length) {
+      return product.images.filter(Boolean);
+    }
+    return product.image ? [product.image] : [];
+  }, [product]);
+
+  useEffect(() => {
+    setSelectedImage(productImages[0] || "");
+  }, [productImages]);
+
+  const similarProducts = similarProductsData?.products || [];
+
+  const selectedImageIndex = Math.max(productImages.indexOf(selectedImage), 0);
+
+  const showImageAtIndex = (index: number) => {
+    if (productImages.length === 0) return;
+    const normalizedIndex =
+      (index + productImages.length) % productImages.length;
+    setSelectedImage(productImages[normalizedIndex]);
+  };
+
+  const showPrevImage = () => {
+    showImageAtIndex(selectedImageIndex - 1);
+  };
+
+  const showNextImage = () => {
+    showImageAtIndex(selectedImageIndex + 1);
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEndX(null);
+    setTouchStartX(event.targetTouches[0]?.clientX ?? null);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    setTouchEndX(event.targetTouches[0]?.clientX ?? null);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX == null || touchEndX == null) return;
+
+    const swipeDistance = touchStartX - touchEndX;
+    if (Math.abs(swipeDistance) < 50) return;
+
+    if (swipeDistance > 0) {
+      showNextImage();
+    } else {
+      showPrevImage();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -168,15 +310,83 @@ export default function ProductPage() {
       )}
 
       <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-        <div className="relative h-100 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 md:h-150">
-          <Image
-            src={product.image || "/placeholder.png"}
-            alt={product.name}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-contain p-8"
-            priority
-          />
+        <div className="space-y-4">
+          <div
+            className="relative h-100 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 md:h-150"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <Image
+              src={selectedImage || product.image || "/placeholder.png"}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-contain p-8"
+              priority
+            />
+
+            {productImages.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={showPrevImage}
+                  className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 text-gray-700 shadow transition hover:bg-white"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={showNextImage}
+                  className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 text-gray-700 shadow transition hover:bg-white"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={20} />
+                </button>
+                <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2 rounded-full bg-white/80 px-3 py-1 shadow">
+                  {productImages.map((imageUrl, index) => (
+                    <button
+                      key={`${imageUrl}-dot-${index}`}
+                      type="button"
+                      onClick={() => setSelectedImage(imageUrl)}
+                      className={`h-2.5 w-2.5 rounded-full transition ${
+                        selectedImage === imageUrl
+                          ? "bg-red-500"
+                          : "bg-gray-300"
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {productImages.length > 1 && (
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+              {productImages.map((imageUrl, index) => (
+                <button
+                  key={`${imageUrl}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImage(imageUrl)}
+                  className={`relative h-24 overflow-hidden rounded-xl border bg-gray-50 ${
+                    selectedImage === imageUrl
+                      ? "border-red-500"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <Image
+                    src={imageUrl || "/placeholder.png"}
+                    alt={`${product.name} ${index + 1}`}
+                    fill
+                    sizes="120px"
+                    className="object-contain p-2"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col">
@@ -389,6 +599,35 @@ export default function ProductPage() {
             </form>
           )}
         </div>
+      </section>
+
+      <section className="mt-14 rounded-3xl border border-gray-200 bg-gray-50/70 p-6 sm:p-8">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {t.product.similarTitle}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-gray-600">
+              {t.product.similarSubtitle}
+            </p>
+          </div>
+          <Link
+            href="/products"
+            className="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+          >
+            {t.home.seeAll}
+          </Link>
+        </div>
+
+        {similarProducts.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {similarProducts.map((similarProduct) => (
+              <ProductCard key={similarProduct._id} product={similarProduct} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">{t.product.noSimilar}</p>
+        )}
       </section>
     </div>
   );

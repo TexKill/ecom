@@ -37,6 +37,7 @@ export interface IProduct extends Document {
   user: Types.ObjectId;
   name: string;
   image: string;
+  images: string[];
   brand: string;
   category: string;
   description: string;
@@ -57,7 +58,14 @@ export interface IOrder extends Document {
   shippingAddress: ShippingAddress;
   paymentMethod: string;
   paymentResult?: PaymentResult;
+  itemsPrice: number;
   shippingPrice: number;
+  discountAmount: number;
+  promoCode?: {
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+  };
   totalPrice: number;
   isPaid: boolean;
   paidAt?: Date;

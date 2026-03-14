@@ -16,6 +16,14 @@ const productSchema = new Schema<IProduct>(
     user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     name: { type: String, required: true },
     image: { type: String, required: true },
+    images: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (value: string[]) => Array.isArray(value) && value.length > 0,
+        message: "At least one image is required",
+      },
+    },
     brand: { type: String, required: true },
     category: { type: String, required: true },
     description: { type: String, required: true },
@@ -29,5 +37,18 @@ const productSchema = new Schema<IProduct>(
   },
   { timestamps: true },
 );
+
+productSchema.pre("validate", function syncProductImages() {
+  const normalizedImages = Array.isArray(this.images)
+    ? this.images.map((item) => item?.trim()).filter(Boolean)
+    : [];
+
+  if (normalizedImages.length === 0 && this.image?.trim()) {
+    normalizedImages.push(this.image.trim());
+  }
+
+  this.images = normalizedImages;
+  this.image = normalizedImages[0] || this.image?.trim() || "";
+});
 
 export const Product = model<IProduct>("Product", productSchema);

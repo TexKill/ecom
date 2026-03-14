@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { objectIdSchema } from "./common";
 
+const productImagesSchema = z
+  .array(z.string().trim().min(1))
+  .min(1)
+  .transform((images) => images.map((image) => image.trim()));
+
 export const productIdParamSchema = z.object({
   id: objectIdSchema,
 });
@@ -42,6 +47,7 @@ export const createProductSchema = z.object({
   descriptionUk: z.string().trim().max(5000).optional(),
   descriptionEn: z.string().trim().max(5000).optional(),
   image: z.string().trim().min(1),
+  images: productImagesSchema,
   brand: z.string().trim().min(1).max(150),
   category: z.string().trim().min(1).max(150),
   countInStock: z.number().int().nonnegative(),
@@ -55,6 +61,7 @@ export const updateProductSchema = z
     descriptionUk: z.string().trim().max(5000).optional(),
     descriptionEn: z.string().trim().max(5000).optional(),
     image: z.string().trim().min(1).optional(),
+    images: productImagesSchema.optional(),
     brand: z.string().trim().min(1).max(150).optional(),
     category: z.string().trim().min(1).max(150).optional(),
     countInStock: z.number().int().nonnegative().optional(),
@@ -67,6 +74,7 @@ export const updateProductSchema = z
       data.descriptionUk !== undefined ||
       data.descriptionEn !== undefined ||
       data.image !== undefined ||
+      data.images !== undefined ||
       data.brand !== undefined ||
       data.category !== undefined ||
       data.countInStock !== undefined,

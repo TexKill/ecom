@@ -136,22 +136,22 @@ export default function Footer() {
           <h3 className="font-semibold text-base">{t.footer.quickLink}</h3>
           <ul className="flex flex-col gap-2 text-sm text-gray-400">
             <li>
-              <Link href="#" className="hover:text-white">
+              <Link href="/privacy-policy" className="hover:text-white">
                 {t.footer.privacy}
               </Link>
             </li>
             <li>
-              <Link href="#" className="hover:text-white">
+              <Link href="/terms-of-use" className="hover:text-white">
                 {t.footer.terms}
               </Link>
             </li>
             <li>
-              <Link href="#" className="hover:text-white">
+              <Link href="/faq" className="hover:text-white">
                 {t.footer.faq}
               </Link>
             </li>
             <li>
-              <Link href="#" className="hover:text-white">
+              <Link href="/contact" className="hover:text-white">
                 {t.footer.contact}
               </Link>
             </li>
@@ -165,4 +165,3 @@ export default function Footer() {
     </footer>
   );
 }
-

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
-import { createOrder } from "@/lib/api";
+import { createOrder, validatePromoCode } from "@/lib/api";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
@@ -48,6 +48,12 @@ export default function CheckoutPage() {
   );
   const [country, setCountry] = useState(shippingAddress.country || "");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [promoApplying, setPromoApplying] = useState(false);
+  const [appliedPromoCode, setAppliedPromoCode] = useState<{
+    code: string;
+    discountAmount: number;
+  } | null>(null);
   const [saveInfo, setSaveInfo] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -104,7 +110,19 @@ export default function CheckoutPage() {
     [items],
   );
   const shippingPrice = subtotal > 100 ? 0 : 10;
-  const total = subtotal + shippingPrice;
+  const discountAmount = appliedPromoCode?.discountAmount || 0;
+  const total = subtotal - discountAmount + shippingPrice;
+
+  const getPromoErrorMessage = (rawMessage?: string) => {
+    if (!rawMessage) return t.checkout.couponInvalid;
+    if (rawMessage === "Promo code not found") return t.checkout.couponNotFound;
+    if (rawMessage === "Promo code is inactive") return t.checkout.couponInactive;
+    if (rawMessage === "Promo code has expired") return t.checkout.couponExpired;
+    if (rawMessage.startsWith("Minimum order amount")) {
+      return t.checkout.couponMinOrder;
+    }
+    return t.checkout.couponInvalid;
+  };
 
   if (!hasHydrated || !user || items.length === 0) return null;
 
@@ -174,6 +192,7 @@ export default function CheckoutPage() {
         },
         paymentMethod:
           paymentMethod === "bank" ? "bank_transfer" : "cash_on_delivery",
+        promoCode: appliedPromoCode?.code,
       });
 
       await clearCart(user.token);
@@ -185,6 +204,39 @@ export default function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleApplyPromoCode = async () => {
+    const normalizedCode = promoCodeInput.trim();
+    if (!normalizedCode) {
+      setMessage(t.checkout.couponEnter);
+      return;
+    }
+
+    try {
+      setPromoApplying(true);
+      setMessage("");
+      const result = await validatePromoCode(normalizedCode, subtotal);
+      setAppliedPromoCode({
+        code: result.promoCode.code,
+        discountAmount: result.discountAmount,
+      });
+      setPromoCodeInput(result.promoCode.code);
+      setMessage(t.checkout.couponApplied);
+    } catch (err: unknown) {
+      const nextMessage = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      setAppliedPromoCode(null);
+      setMessage(getPromoErrorMessage(nextMessage));
+    } finally {
+      setPromoApplying(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromoCode(null);
+    setPromoCodeInput("");
+    setMessage(t.checkout.couponRemoved);
   };
 
   return (
@@ -429,10 +481,48 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-5 space-y-3 border-t border-gray-200 pt-4 text-sm">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCodeInput}
+                onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                placeholder={t.checkout.couponCode}
+                className="flex-1 rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
+              />
+              <button
+                type="button"
+                onClick={handleApplyPromoCode}
+                disabled={promoApplying}
+                className="rounded border border-gray-300 px-4 py-3 text-sm font-medium hover:border-black disabled:opacity-60"
+              >
+                {promoApplying ? t.admin.loading : t.checkout.applyCoupon}
+              </button>
+            </div>
+            {appliedPromoCode && (
+              <div className="flex items-center justify-between rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                <span>
+                  {appliedPromoCode.code} - {t.checkout.discount}: ₴
+                  {appliedPromoCode.discountAmount.toFixed(2)}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemovePromoCode}
+                  className="font-medium text-emerald-800 underline"
+                >
+                  {t.admin.delete}
+                </button>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>{t.checkout.subtotal}:</span>
               <span>₴{subtotal.toFixed(2)}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-700">
+                <span>{t.checkout.discount}:</span>
+                <span>-₴{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-b border-gray-200 pb-3">
               <span>{t.checkout.shipping}:</span>
               <span>

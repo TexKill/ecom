@@ -4,6 +4,7 @@ import { PaymentLog } from "../models/PaymentLog";
 import { Product } from "../models/Product";
 import { env } from "../config/env";
 import { invalidateProductCaches } from "./ProductCacheService";
+import { validatePromoCodeForSubtotal } from "./PromoCodeService";
 import {
   decodeLiqPayPayload,
   encodeLiqPayPayload,
@@ -28,9 +29,10 @@ export const createOrder = async (
       country: string;
     };
     paymentMethod: string;
+    promoCode?: string;
   },
 ) => {
-  const { orderItems, shippingAddress, paymentMethod } = payload;
+  const { orderItems, shippingAddress, paymentMethod, promoCode } = payload;
 
   const uniqueProductIds: string[] = [
     ...new Set(
@@ -72,8 +74,12 @@ export const createOrder = async (
   });
 
   const itemsPrice = normalizedOrderItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const promoValidation = promoCode
+    ? await validatePromoCodeForSubtotal(promoCode, itemsPrice)
+    : null;
+  const discountAmount = promoValidation?.discountAmount || 0;
   const shippingPrice = itemsPrice > 100 ? 0 : 10;
-  const totalPrice = Number((itemsPrice + shippingPrice).toFixed(2));
+  const totalPrice = Number((itemsPrice - discountAmount + shippingPrice).toFixed(2));
 
   const qtyByProduct = normalizedOrderItems.reduce((acc, item) => {
     const key = item.product.toString();
@@ -99,7 +105,16 @@ export const createOrder = async (
     orderItems: normalizedOrderItems,
     shippingAddress,
     paymentMethod,
+    itemsPrice,
     shippingPrice,
+    discountAmount,
+    promoCode: promoValidation
+      ? {
+          code: promoValidation.promoCode.code,
+          type: promoValidation.promoCode.type,
+          value: promoValidation.promoCode.value,
+        }
+      : undefined,
     totalPrice,
     isPaid: false,
     isDelivered: false,

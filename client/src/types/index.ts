@@ -28,6 +28,7 @@ export interface IProduct {
   _id: string;
   name: string;
   image: string;
+  images?: string[];
   brand: string;
   category: string;
   description: string;
@@ -52,7 +53,14 @@ export interface IOrder {
   shippingAddress: ShippingAddress;
   paymentMethod: string;
   paymentResult?: Partial<PaymentResult>;
+  itemsPrice?: number;
   shippingPrice: number;
+  discountAmount?: number;
+  promoCode?: {
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+  };
   totalPrice: number;
   isPaid: boolean;
   paidAt?: string;
@@ -70,4 +78,16 @@ export interface IPaymentLog {
   status: string;
   processedAt?: string;
   createdAt?: string;
+}
+
+export interface IPromoCode {
+  _id: string;
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  minOrderAmount: number;
+  isActive: boolean;
+  expiresAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

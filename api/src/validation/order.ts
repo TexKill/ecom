@@ -19,6 +19,7 @@ export const createOrderSchema = z.object({
     country: z.string().trim().min(2),
   }),
   paymentMethod: z.string().trim().min(2).max(50),
+  promoCode: z.string().trim().min(2).max(50).optional(),
 });
 
 export const payOrderSchema = z.object({

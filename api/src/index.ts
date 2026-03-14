@@ -11,6 +11,7 @@ import uploadRoute from "./routes/Upload";
 import cartRouter from "./routes/Cart";
 import favoritesRouter from "./routes/Favorites";
 import subscriberRouter from "./routes/Subscriber";
+import promoCodeRoute from "./routes/PromoCode";
 import { errorHandler, notFound } from "./middleware/Error";
 import { env } from "./config/env";
 import { logger } from "./utils/logger";
@@ -59,6 +60,7 @@ app.use("/api/upload", uploadRoute);
 app.use("/api/cart", cartRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/subscribers", subscriberRouter);
+app.use("/api/promocodes", promoCodeRoute);
 app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "api" });
 });

@@ -2,6 +2,7 @@ const products = [
   {
     name: "Airpods Wireless Bluetooth Headphones",
     image: "/images/airpods.jpg",
+    images: ["/images/airpods.jpg"],
     description:
       "Bluetooth technology lets you connect it with compatible devices wirelessly.",
     descriptionUk:
@@ -18,6 +19,7 @@ const products = [
   {
     name: "iPhone 13 Pro 256GB Memory",
     image: "/images/phone.jpg",
+    images: ["/images/phone.jpg"],
     description:
       "Introducing the iPhone 13 Pro. A transformative triple-camera system.",
     descriptionUk:
@@ -34,6 +36,7 @@ const products = [
   {
     name: "Cannon EOS 80D DSLR Camera",
     image: "/images/camera.jpg",
+    images: ["/images/camera.jpg"],
     description:
       "Characterized by versatile imaging specs, the Canon EOS 80D further clarifies its potential.",
     descriptionUk:

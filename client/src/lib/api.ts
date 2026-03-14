@@ -1,5 +1,12 @@
 import axiosInstance from "./axios";
-import { IProduct, IUser, IOrder, OrderStatus, IPaymentLog } from "../types";
+import {
+  IProduct,
+  IUser,
+  IOrder,
+  OrderStatus,
+  IPaymentLog,
+  IPromoCode,
+} from "../types";
 
 export const loginUser = async (email: string, password: string) => {
   const { data } = await axiosInstance.post<IUser & { token: string }>(
@@ -88,8 +95,24 @@ export const deleteProductReview = async (
   return data;
 };
 
-export const createOrder = async (orderData: Partial<IOrder>) => {
+export type CreateOrderPayload = {
+  orderItems: Array<{ product: string; qty: number }>;
+  shippingAddress: IOrder["shippingAddress"];
+  paymentMethod: string;
+  promoCode?: string;
+};
+
+export const createOrder = async (orderData: CreateOrderPayload) => {
   const { data } = await axiosInstance.post<IOrder>("/api/orders", orderData);
+  return data;
+};
+
+export const validatePromoCode = async (code: string, subtotal: number) => {
+  const { data } = await axiosInstance.get<{
+    valid: boolean;
+    discountAmount: number;
+    promoCode: IPromoCode;
+  }>(`/api/promocodes/validate?code=${encodeURIComponent(code)}&subtotal=${subtotal}`);
   return data;
 };
 
@@ -167,6 +190,43 @@ export const getPaymentLogs = async (params?: {
   return data;
 };
 
+export const getPromoCodes = async () => {
+  const { data } = await axiosInstance.get<IPromoCode[]>("/api/promocodes");
+  return data;
+};
+
+export const createPromoCode = async (payload: {
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  minOrderAmount: number;
+  isActive?: boolean;
+  expiresAt?: string;
+}) => {
+  const { data } = await axiosInstance.post<IPromoCode>("/api/promocodes", payload);
+  return data;
+};
+
+export const updatePromoCode = async (
+  id: string,
+  payload: Partial<{
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+    minOrderAmount: number;
+    isActive: boolean;
+    expiresAt: string | null;
+  }>,
+) => {
+  const { data } = await axiosInstance.put<IPromoCode>(`/api/promocodes/${id}`, payload);
+  return data;
+};
+
+export const deletePromoCode = async (id: string) => {
+  const { data } = await axiosInstance.delete<{ message: string }>(`/api/promocodes/${id}`);
+  return data;
+};
+
 // Admin Products
 export type ProductPayload = {
   name: string;
@@ -175,6 +235,7 @@ export type ProductPayload = {
   descriptionUk?: string;
   descriptionEn?: string;
   image: string;
+  images: string[];
   brand: string;
   category: string;
   countInStock: number;

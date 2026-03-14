@@ -4,20 +4,31 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  createPromoCode,
   createProduct,
+  deletePromoCode,
   deleteOrder,
   deleteProduct,
   getAdminOrderStats,
   getAllOrders,
   getPaymentLogs,
+  getPromoCodes,
   getProducts,
   ProductPayload,
   restockProductsRandom,
   uploadProductImage,
+  updatePromoCode,
   updateOrderStatus,
   updateProduct,
 } from "@/lib/api";
-import { IOrder, IProduct, IUser, OrderStatus, IPaymentLog } from "@/types";
+import {
+  IOrder,
+  IProduct,
+  IUser,
+  OrderStatus,
+  IPaymentLog,
+  IPromoCode,
+} from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import Breadcrumbs from "@/components/layout/Breadcrumbs";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -33,14 +44,36 @@ const emptyForm: ProductPayload = {
   descriptionUk: "",
   descriptionEn: "",
   image: "",
+  images: [],
   brand: "",
   category: "",
   countInStock: 0,
 };
 
-type AdminTab = "products" | "orders" | "payments";
+type PromoFormState = {
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  minOrderAmount: number;
+  isActive: boolean;
+  expiresAt: string;
+};
+
+const emptyPromoForm: PromoFormState = {
+  code: "",
+  type: "percent",
+  value: 10,
+  minOrderAmount: 0,
+  isActive: true,
+  expiresAt: "",
+};
+
+type AdminTab = "products" | "orders" | "payments" | "promos";
 const isAdminTab = (value: string): value is AdminTab =>
-  value === "products" || value === "orders" || value === "payments";
+  value === "products" ||
+  value === "orders" ||
+  value === "payments" ||
+  value === "promos";
 
 export default function AdminPage() {
   const { t } = useLanguage();
@@ -53,6 +86,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [paymentLogs, setPaymentLogs] = useState<IPaymentLog[]>([]);
+  const [promoCodes, setPromoCodes] = useState<IPromoCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState<{
@@ -93,10 +127,20 @@ export default function AdminPage() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ProductPayload>(emptyForm);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [promoEditingId, setPromoEditingId] = useState<string | null>(null);
+  const [promoForm, setPromoForm] = useState<PromoFormState>(emptyPromoForm);
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
 
   const loadFailMsg = t.admin.loadFail;
+
+  const getPromoAdminErrorMessage = (rawMessage?: string) => {
+    if (!rawMessage) return t.admin.actionFailed;
+    if (rawMessage === "Promo code already exists") return t.admin.promoExists;
+    if (rawMessage === "Validation failed") return t.admin.actionFailed;
+    return rawMessage;
+  };
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -137,6 +181,11 @@ export default function AdminPage() {
           });
           setPaymentLogs(logsRes.logs);
           setPaymentTotalPages(logsRes.pages);
+        }
+
+        if (tab === "promos") {
+          const promoCodesRes = await getPromoCodes();
+          setPromoCodes(promoCodesRes);
         }
 
         const statsRes = await getAdminOrderStats();
@@ -244,6 +293,12 @@ export default function AdminPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setImageUrlInput("");
+  };
+
+  const resetPromoForm = () => {
+    setPromoEditingId(null);
+    setPromoForm(emptyPromoForm);
   };
 
   const handleSubmitProduct = async (e: React.FormEvent) => {
@@ -260,12 +315,19 @@ export default function AdminPage() {
       return;
     }
 
+    if (form.images.length === 0) {
+      showToast(t.admin.saveFail, "error");
+      return;
+    }
+
     try {
       setSaving(true);
       setError("");
 
       const payload: ProductPayload = {
         ...form,
+        image: form.images[0] || form.image,
+        images: form.images,
         description: fallbackDescription,
         descriptionUk: form.descriptionUk?.trim() || fallbackDescription,
         descriptionEn: form.descriptionEn?.trim() || fallbackDescription,
@@ -299,17 +361,55 @@ export default function AdminPage() {
       descriptionUk: product.descriptionUk || product.description,
       descriptionEn: product.descriptionEn || product.description,
       image: product.image,
+      images:
+        product.images?.length && product.images[0]
+          ? product.images
+          : product.image
+            ? [product.image]
+            : [],
       brand: product.brand,
       category: product.category,
       countInStock: product.countInStock,
     });
+    setImageUrlInput("");
   };
 
-  const handleImageUpload = async (file: File) => {
+  const syncImages = (images: string[]) => {
+    setForm((prev) => ({
+      ...prev,
+      images,
+      image: images[0] || "",
+    }));
+  };
+
+  const addImageUrl = () => {
+    const normalizedUrl = imageUrlInput.trim();
+    if (!normalizedUrl) return;
+    if (form.images.includes(normalizedUrl)) {
+      setImageUrlInput("");
+      return;
+    }
+    syncImages([...form.images, normalizedUrl]);
+    setImageUrlInput("");
+  };
+
+  const removeImage = (imageUrl: string) => {
+    syncImages(form.images.filter((item) => item !== imageUrl));
+  };
+
+  const handleImageUpload = async (files: FileList | File[]) => {
     try {
       setUploadingImage(true);
-      const url = await uploadProductImage(file);
-      setForm((prev) => ({ ...prev, image: url }));
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const url = await uploadProductImage(file);
+        uploadedUrls.push(url);
+      }
+      syncImages(
+        [...form.images, ...uploadedUrls].filter(
+          (url, index, arr) => arr.indexOf(url) === index,
+        ),
+      );
       showToast(t.admin.imageUploaded, "success");
     } catch {
       showToast(t.admin.uploadFail, "error");
@@ -343,6 +443,70 @@ export default function AdminPage() {
         await deleteOrder(id);
         setOrders((prev) => prev.filter((o) => o._id !== id));
         showToast(t.admin.orderDeleted, "success");
+      },
+    });
+  };
+
+  const handleSubmitPromoCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      const payload = {
+        ...promoForm,
+        code: promoForm.code.trim().toUpperCase(),
+        expiresAt: promoForm.expiresAt
+          ? new Date(`${promoForm.expiresAt}T23:59:59.999`).toISOString()
+          : undefined,
+      };
+
+      if (promoEditingId) {
+        const updated = await updatePromoCode(promoEditingId, payload);
+        setPromoCodes((prev) =>
+          prev.map((promo) => (promo._id === promoEditingId ? updated : promo)),
+        );
+        showToast(t.admin.promoUpdated, "success");
+      } else {
+        const created = await createPromoCode(payload);
+        setPromoCodes((prev) => [created, ...prev]);
+        showToast(t.admin.promoCreated, "success");
+      }
+
+      resetPromoForm();
+    } catch (err: unknown) {
+      const nextMessage = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      showToast(getPromoAdminErrorMessage(nextMessage), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startPromoEdit = (promoCode: IPromoCode) => {
+    setPromoEditingId(promoCode._id);
+    setPromoForm({
+      code: promoCode.code,
+      type: promoCode.type,
+      value: promoCode.value,
+      minOrderAmount: promoCode.minOrderAmount,
+      isActive: promoCode.isActive,
+      expiresAt: promoCode.expiresAt ? promoCode.expiresAt.slice(0, 10) : "",
+    });
+  };
+
+  const handleDeletePromoCode = (id: string, code: string) => {
+    openConfirm({
+      title: t.admin.delete,
+      message: `${t.admin.promoCode}: ${code}?`,
+      confirmText: t.admin.delete,
+      danger: true,
+      onConfirm: async () => {
+        await deletePromoCode(id);
+        setPromoCodes((prev) => prev.filter((promo) => promo._id !== id));
+        if (promoEditingId === id) resetPromoForm();
+        showToast(t.admin.promoDeleted, "success");
       },
     });
   };
@@ -412,7 +576,7 @@ export default function AdminPage() {
             {restocking ? t.admin.restocking : t.admin.restock}
           </button>
         )}
-        <div className="grid grid-cols-3 gap-2 sm:flex">
+        <div className="grid grid-cols-2 gap-2 sm:flex">
           <button
             onClick={() => handleTabChange("products")}
             className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "products" ? "bg-black text-white" : "bg-gray-100"}`}
@@ -430,6 +594,12 @@ export default function AdminPage() {
             className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "payments" ? "bg-black text-white" : "bg-gray-100"}`}
           >
             {t.admin.paymentsTab}
+          </button>
+          <button
+            onClick={() => handleTabChange("promos")}
+            className={`rounded px-3 py-2 text-xs sm:px-4 sm:text-sm ${tab === "promos" ? "bg-black text-white" : "bg-gray-100"}`}
+          >
+            {t.admin.promos}
           </button>
         </div>
       </div>
@@ -560,15 +730,24 @@ export default function AdminPage() {
                     <span className="mb-1 block text-xs font-medium text-gray-600">
                       {t.admin.imageUrl}
                     </span>
-                    <input
-                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                      placeholder="https://..."
-                      value={form.image}
-                      onChange={(e) =>
-                        setForm((s) => ({ ...s, image: e.target.value }))
-                      }
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                        placeholder="https://..."
+                        value={imageUrlInput}
+                        onChange={(e) => setImageUrlInput(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={addImageUrl}
+                        className="rounded border border-gray-300 px-3 py-2 text-sm hover:border-black"
+                      >
+                        {t.admin.add}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {form.images.length > 0 ? form.images[0] : t.admin.uploadHint}
+                    </p>
                   </label>
 
                   <label className="block">
@@ -578,16 +757,44 @@ export default function AdminPage() {
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/jpg,image/webp"
+                      multiple
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-black file:px-3 file:py-2 file:text-sm file:text-white"
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
+                        if (e.target.files?.length) {
+                          handleImageUpload(e.target.files);
+                          e.target.value = "";
+                        }
                       }}
                     />
                     <p className="mt-1 text-xs text-gray-500">
                       {uploadingImage ? t.admin.uploading : t.admin.uploadHint}
                     </p>
                   </label>
+
+                  <div className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.images}
+                    </span>
+                    <div className="space-y-2">
+                      {form.images.map((imageUrl, index) => (
+                        <div
+                          key={`${imageUrl}-${index}`}
+                          className="flex items-center gap-2 rounded border border-gray-200 px-3 py-2"
+                        >
+                          <span className="min-w-0 flex-1 truncate text-xs text-gray-600">
+                            {index + 1}. {imageUrl}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(imageUrl)}
+                            className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                          >
+                            {t.admin.delete}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-gray-600">
@@ -921,6 +1128,190 @@ export default function AdminPage() {
                 totalPages={paymentTotalPages}
                 onPageChange={setPaymentPage}
               />
+            </div>
+          )}
+
+          {tab === "promos" && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <form
+                onSubmit={handleSubmitPromoCode}
+                className="rounded-lg border border-gray-200 p-4 lg:col-span-1"
+              >
+                <h2 className="mb-4 font-semibold">{t.admin.promoCreate}</h2>
+                <div className="space-y-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.promoCode}
+                    </span>
+                    <input
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm uppercase"
+                      value={promoForm.code}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.promoType}
+                    </span>
+                    <select
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      value={promoForm.type}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({
+                          ...prev,
+                          type: e.target.value as "percent" | "fixed",
+                        }))
+                      }
+                    >
+                      <option value="percent">percent</option>
+                      <option value="fixed">fixed</option>
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.promoValue}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      value={promoForm.value}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({ ...prev, value: Number(e.target.value) }))
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.promoMinOrder}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      value={promoForm.minOrderAmount}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({
+                          ...prev,
+                          minOrderAmount: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-gray-600">
+                      {t.admin.promoExpiresAt}
+                    </span>
+                    <input
+                      type="date"
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      value={promoForm.expiresAt}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({ ...prev, expiresAt: e.target.value }))
+                      }
+                    />
+                  </label>
+
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={promoForm.isActive}
+                      onChange={(e) =>
+                        setPromoForm((prev) => ({ ...prev, isActive: e.target.checked }))
+                      }
+                    />
+                    {t.admin.promoActive}
+                  </label>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-red-500 disabled:bg-gray-400"
+                  >
+                    {saving ? t.admin.saving : promoEditingId ? t.admin.update : t.admin.create}
+                  </button>
+                  {promoEditingId && (
+                    <button
+                      type="button"
+                      onClick={resetPromoForm}
+                      className="rounded border border-gray-300 px-4 py-2 text-sm"
+                    >
+                      {t.admin.cancel}
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className="rounded-lg border border-gray-200 lg:col-span-2">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">{t.admin.promoCode}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.promoType}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.promoValue}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.promoMinOrder}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.promoActive}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.promoExpiresAt}</th>
+                        <th className="px-3 py-2 text-left">{t.admin.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {promoCodes.length === 0 && (
+                        <tr>
+                          <td className="px-3 py-4 text-gray-500" colSpan={7}>
+                            {t.admin.noPromoCodes}
+                          </td>
+                        </tr>
+                      )}
+                      {promoCodes.map((promoCode) => (
+                        <tr key={promoCode._id} className="border-t">
+                          <td className="px-3 py-2 font-medium">{promoCode.code}</td>
+                          <td className="px-3 py-2">{promoCode.type}</td>
+                          <td className="px-3 py-2">{promoCode.value}</td>
+                          <td className="px-3 py-2">{promoCode.minOrderAmount}</td>
+                          <td className="px-3 py-2">
+                            {promoCode.isActive ? t.admin.yes : t.admin.no}
+                          </td>
+                          <td className="px-3 py-2">
+                            {promoCode.expiresAt
+                              ? new Date(promoCode.expiresAt).toLocaleDateString()
+                              : "-"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => startPromoEdit(promoCode)}
+                                className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                              >
+                                {t.admin.edit}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeletePromoCode(promoCode._id, promoCode.code)
+                                }
+                                className="rounded border border-red-300 px-2 py-1 text-red-600 hover:bg-red-50"
+                              >
+                                {t.admin.delete}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </>

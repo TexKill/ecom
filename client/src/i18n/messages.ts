@@ -89,6 +89,9 @@ export type Messages = {
     notFound: string;
     returnHome: string;
     backToProducts: string;
+    similarTitle: string;
+    similarSubtitle: string;
+    noSimilar: string;
     reviewsCount: string;
     status: string;
     inStock: string;
@@ -200,6 +203,14 @@ export type Messages = {
     cod: string;
     couponCode: string;
     applyCoupon: string;
+    couponApplied: string;
+    couponRemoved: string;
+    couponInvalid: string;
+    couponNotFound: string;
+    couponInactive: string;
+    couponExpired: string;
+    couponMinOrder: string;
+    discount: string;
     placeOrder: string;
     placing: string;
     terms: string;
@@ -217,6 +228,7 @@ export type Messages = {
     title: string;
     products: string;
     orders: string;
+    promos: string;
     loadFail: string;
     loading: string;
     editProduct: string;
@@ -225,6 +237,7 @@ export type Messages = {
     brand: string;
     category: string;
     imageUrl: string;
+    images: string;
     uploadImageFile: string;
     uploading: string;
     uploadHint: string;
@@ -240,6 +253,7 @@ export type Messages = {
     deleteOrderFail: string;
     shortDescription: string;
     saving: string;
+    add: string;
     update: string;
     create: string;
     cancel: string;
@@ -295,6 +309,18 @@ export type Messages = {
     paymentsDateTo: string;
     paymentsAll: string;
     paymentsProcessed: string;
+    promoCode: string;
+    promoType: string;
+    promoValue: string;
+    promoMinOrder: string;
+    promoExpiresAt: string;
+    promoActive: string;
+    promoCreate: string;
+    promoCreated: string;
+    promoUpdated: string;
+    promoDeleted: string;
+    promoExists: string;
+    noPromoCodes: string;
   };
   footer: {
     subscribe: string;
@@ -414,6 +440,9 @@ const en: Messages = {
     notFound: "Product Not Found",
     returnHome: "Return to Home",
     backToProducts: "Back to Products",
+    similarTitle: "Similar Products",
+    similarSubtitle: "You may also like these items from the same category or brand.",
+    noSimilar: "No similar products found yet.",
     reviewsCount: "reviews",
     status: "Status",
     inStock: "In Stock",
@@ -525,6 +554,14 @@ const en: Messages = {
     cod: "Cash on delivery",
     couponCode: "Coupon Code",
     applyCoupon: "Apply Coupon",
+    couponApplied: "Promo code applied",
+    couponRemoved: "Promo code removed",
+    couponInvalid: "Failed to apply promo code",
+    couponNotFound: "Promo code not found",
+    couponInactive: "Promo code is inactive",
+    couponExpired: "Promo code has expired",
+    couponMinOrder: "Order amount is too low for this promo code",
+    discount: "Discount",
     placeOrder: "Place Order",
     placing: "Placing...",
     terms:
@@ -543,6 +580,7 @@ const en: Messages = {
     title: "Admin Dashboard",
     products: "Products",
     orders: "Orders",
+    promos: "Promos",
     loadFail: "Failed to load admin data",
     loading: "Loading...",
     editProduct: "Edit Product",
@@ -551,6 +589,7 @@ const en: Messages = {
     brand: "Brand",
     category: "Category",
     imageUrl: "Image URL",
+    images: "Images",
     uploadImageFile: "Upload Image File",
     uploading: "Uploading...",
     uploadHint: "PNG, JPG, JPEG, WEBP up to 5MB",
@@ -566,6 +605,7 @@ const en: Messages = {
     deleteOrderFail: "Failed to delete order",
     shortDescription: "Short product description",
     saving: "Saving...",
+    add: "Add",
     update: "Update",
     create: "Create",
     cancel: "Cancel",
@@ -623,6 +663,18 @@ const en: Messages = {
     paymentsDateTo: "Date to",
     paymentsAll: "All",
     paymentsProcessed: "Processed",
+    promoCode: "Promo Code",
+    promoType: "Type",
+    promoValue: "Value",
+    promoMinOrder: "Min Order",
+    promoExpiresAt: "Expires At",
+    promoActive: "Active",
+    promoCreate: "Create Promo Code",
+    promoCreated: "Promo code created",
+    promoUpdated: "Promo code updated",
+    promoDeleted: "Promo code deleted",
+    promoExists: "Promo code already exists",
+    noPromoCodes: "No promo codes yet.",
   },
   footer: {
     subscribe: "Subscribe to get updates on promotions and coupons.",
@@ -745,6 +797,10 @@ const uk: Messages = {
   },
   product: {
     ...en.product,
+    similarTitle: "Схожі товари",
+    similarSubtitle:
+      "Можливо, вам сподобаються ці товари з тієї ж категорії або бренду.",
+    noSimilar: "Схожих товарів поки не знайдено.",
     notFound: "Товар не знайдено",
     returnHome: "Повернутись на головну",
     backToProducts: "Назад до товарів",
@@ -823,11 +879,11 @@ const uk: Messages = {
     customerEmail: "Email",
     customerId: "ID користувача",
     payWithLiqPay:
-      "\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 LiqPay",
+      "Оплатити через LiqPay",
     paying:
-      "\u041f\u0435\u0440\u0435\u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 LiqPay...",
+      "Перенаправлення на LiqPay...",
     paymentInitFail:
-      "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0456\u043d\u0456\u0446\u0456\u0430\u043b\u0456\u0437\u0443\u0432\u0430\u0442\u0438 \u043e\u043f\u043b\u0430\u0442\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
+      "Не вдалося ініціалізувати оплату. Спробуйте ще раз.",
   },
   account: {
     ...en.account,
@@ -842,6 +898,14 @@ const uk: Messages = {
   },
   checkout: {
     ...en.checkout,
+    couponApplied: "Промокод застосовано",
+    couponRemoved: "Промокод видалено",
+    couponInvalid: "Не вдалося застосувати промокод",
+    couponNotFound: "Промокод не знайдено",
+    couponInactive: "Цей промокод неактивний",
+    couponExpired: "Термін дії промокоду завершився",
+    couponMinOrder: "Сума замовлення замала для цього промокоду",
+    discount: "Знижка",
     account: "Акаунт",
     myAccount: "Мій кабінет",
     product: "Товар",
@@ -861,7 +925,7 @@ const uk: Messages = {
     subtotal: "Проміжна сума",
     total: "Разом",
     paymentMethod:
-      "\u0421\u043f\u043e\u0441\u0456\u0431 \u043e\u043f\u043b\u0430\u0442\u0438",
+      "Спосіб оплати",
     bank: "Банк",
     cod: "Післяплата",
     couponCode: "Код купона",
@@ -871,7 +935,7 @@ const uk: Messages = {
     terms:
       "Оформлюючи замовлення, ви погоджуєтеся з нашими умовами. Це оформлення повністю підключене до вашого backend API замовлень.",
     needEdit:
-      "\u041f\u043e\u0442\u0440\u0456\u0431\u043d\u043e \u0437\u043c\u0456\u043d\u0438\u0442\u0438 \u043a\u043e\u0448\u0438\u043a?",
+      "Потрібно змінити кошик?",
     goBackToCart: "Повернутись у кошик",
     couponEnter: "Спочатку введіть код купона.",
     couponNext: "В розробці...",
@@ -884,6 +948,19 @@ const uk: Messages = {
   },
   admin: {
     ...en.admin,
+    promos: "Промокоди",
+    promoCode: "Промокод",
+    promoType: "Тип",
+    promoValue: "Значення",
+    promoMinOrder: "Мін. сума",
+    promoExpiresAt: "Діє до",
+    promoActive: "Активний",
+    promoCreate: "Створити промокод",
+    promoCreated: "Промокод створено",
+    promoUpdated: "Промокод оновлено",
+    promoDeleted: "Промокод видалено",
+    promoExists: "Такий промокод вже існує",
+    noPromoCodes: "Поки немає промокодів.",
     title: "Адмін панель",
     products: "Товари",
     orders: "Замовлення",
@@ -895,6 +972,7 @@ const uk: Messages = {
     brand: "Бренд",
     category: "Категорія",
     imageUrl: "URL зображення",
+    images: "Зображення",
     uploadImageFile: "Завантажити файл зображення",
     uploading: "Завантаження...",
     uploadHint: "PNG, JPG, JPEG, WEBP до 5MB",
@@ -908,6 +986,7 @@ const uk: Messages = {
     deliverFail: "Не вдалося позначити замовлення як доставлене",
     deleteOrderFail: "Не вдалося видалити замовлення",
     shortDescription: "Короткий опис товару",
+    add: "Додати",
     saving: "Збереження...",
     update: "Оновити",
     create: "Створити",
@@ -922,110 +1001,110 @@ const uk: Messages = {
     user: "Користувач",
     total: "Сума",
     paid: "Оплачено",
-    paymentTx: "\u041f\u043b\u0430\u0442\u0456\u0436 TX",
+    paymentTx: "Платіж TX",
     delivered: "Доставлено",
     yes: "Так",
     no: "Ні",
     deliver: "Доставити",
-    restock: "\u0420\u0435\u0441\u0442\u043e\u043a 1-100",
-    restocking: "\u0420\u0435\u0441\u0442\u043e\u043a...",
+    restock: "Ресток 1-100",
+    restocking: "Ресток...",
     confirmAction:
-      "\u041f\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438",
+      "Підтвердити",
     actionFailed:
-      "\u0414\u0456\u044e \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0432\u0438\u043a\u043e\u043d\u0430\u0442\u0438. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
+      "Дію не вдалося виконати. Спробуйте ще раз.",
     confirmDeleteProductTitle:
-      "\u0412\u0438\u0434\u0430\u043b\u0435\u043d\u043d\u044f \u0442\u043e\u0432\u0430\u0440\u0443",
+      "Видалення товару",
     confirmDeleteProductMessage:
-      '\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 "{name}"? \u0426\u044e \u0434\u0456\u044e \u043d\u0435\u043c\u043e\u0436\u043b\u0438\u0432\u043e \u0441\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438.',
+      'Видалити "{name}"? Цю дію неможливо скасувати.',
     confirmDeleteOrderTitle:
-      "\u0412\u0438\u0434\u0430\u043b\u0435\u043d\u043d\u044f \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+      "Видалення замовлення",
     confirmDeleteOrderMessage:
-      "\u0412\u0438\u0434\u0430\u043b\u0438\u0442\u0438 \u0446\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f? \u0426\u044e \u0434\u0456\u044e \u043d\u0435\u043c\u043e\u0436\u043b\u0438\u0432\u043e \u0441\u043a\u0430\u0441\u0443\u0432\u0430\u0442\u0438.",
+      "Видалити це замовлення? Цю дію неможливо скасувати.",
     confirmDeliverTitle:
-      "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
+      "Позначити як доставлене",
     confirmDeliverMessage:
-      "\u041f\u043e\u0437\u043d\u0430\u0447\u0438\u0442\u0438 \u0446\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435?",
+      "Позначити це замовлення як доставлене?",
     confirmStatusTitle:
-      "\u0417\u043c\u0456\u043d\u0430 \u0441\u0442\u0430\u0442\u0443\u0441\u0443",
+      "Зміна статусу",
     confirmStatusMessage:
-      '\u041e\u043d\u043e\u0432\u0438\u0442\u0438 \u0441\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043d\u0430 "{status}"?',
+      'Оновити статус замовлення на "{status}"?',
     confirmRestockTitle:
-      "\u0412\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0438\u0439 \u0440\u0435\u0441\u0442\u043e\u043a",
+      "Випадковий ресток",
     confirmRestockMessage:
-      "\u0412\u0438\u0441\u0442\u0430\u0432\u0438\u0442\u0438 \u0432\u0441\u0456\u043c \u0442\u043e\u0432\u0430\u0440\u0430\u043c \u0432\u0438\u043f\u0430\u0434\u043a\u043e\u0432\u0443 \u043a\u0456\u043b\u044c\u043a\u0456\u0441\u0442\u044c (1-100)?",
+      "Виставити всім товарам випадкову кількість (1-100)?",
     productUpdated:
-      "\u0422\u043e\u0432\u0430\u0440 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
+      "Товар оновлено",
     productCreated:
-      "\u0422\u043e\u0432\u0430\u0440 \u0441\u0442\u0432\u043e\u0440\u0435\u043d\u043e",
+      "Товар створено",
     imageUploaded:
-      "\u0417\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e",
+      "Зображення завантажено",
     productDeleted:
-      "\u0422\u043e\u0432\u0430\u0440 \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
+      "Товар видалено",
     orderDelivered:
-      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043f\u043e\u0437\u043d\u0430\u0447\u0435\u043d\u043e \u044f\u043a \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0435",
+      "Замовлення позначено як доставлене",
     orderDeleted:
-      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0432\u0438\u0434\u0430\u043b\u0435\u043d\u043e",
+      "Замовлення видалено",
     orderStatusUpdated:
-      "\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e",
+      "Статус замовлення оновлено",
     productsRestocked:
-      "\u0422\u043e\u0432\u0430\u0440\u0438 \u0440\u0435\u0441\u0442\u043e\u043a\u043d\u0443\u0442\u043e",
-    view: "\u041f\u0435\u0440\u0435\u0433\u043b\u044f\u0434",
-    paymentsTab: "\u041f\u043b\u0430\u0442\u0435\u0436\u0456",
+      "Товари рестокнуто",
+    view: "Перегляд",
+    paymentsTab: "Платежі",
     statsTotalOrders:
-      "\u0412\u0441\u044c\u043e\u0433\u043e \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u044c",
+      "Всього замовлень",
     statsPaidOrders:
-      "\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+      "Оплачені замовлення",
     statsPendingOrders:
-      "\u0417\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0432 \u043e\u0447\u0456\u043a\u0443\u0432\u0430\u043d\u043d\u0456",
+      "Замовлення в очікуванні",
     statsDeliveredOrders:
-      "\u0414\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+      "Доставлені замовлення",
     statsTotalRevenue:
-      "\u0417\u0430\u0433\u0430\u043b\u044c\u043d\u0430 \u0432\u0438\u0440\u0443\u0447\u043a\u0430",
+      "Загальна виручка",
     statsPaidRevenue:
-      "\u041e\u043f\u043b\u0430\u0447\u0435\u043d\u0430 \u0432\u0438\u0440\u0443\u0447\u043a\u0430",
+      "Оплачена виручка",
     statsUnpaidOrders:
-      "\u041d\u0435\u043e\u043f\u043b\u0430\u0447\u0435\u043d\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f",
+      "Неоплачені замовлення",
     statsAvgOrderValue:
-      "\u0421\u0435\u0440\u0435\u0434\u043d\u0456\u0439 \u0447\u0435\u043a",
-    paymentsStatus: "\u0421\u0442\u0430\u0442\u0443\u0441",
-    paymentsDateFrom: "\u0414\u0430\u0442\u0430 \u0432\u0456\u0434",
-    paymentsDateTo: "\u0414\u0430\u0442\u0430 \u0434\u043e",
-    paymentsAll: "\u0412\u0441\u0456",
-    paymentsProcessed: "\u041e\u0431\u0440\u043e\u0431\u043b\u0435\u043d\u043e",
+      "Середній чек",
+    paymentsStatus: "Статус",
+    paymentsDateFrom: "Дата від",
+    paymentsDateTo: "Дата до",
+    paymentsAll: "Всі",
+    paymentsProcessed: "Оброблено",
   },
   footer: {
     ...en.footer,
     subscribe:
-      "\u041f\u0456\u0434\u043f\u0438\u0448\u0456\u0442\u044c\u0441\u044f, \u0449\u043e\u0431 \u043e\u0442\u0440\u0438\u043c\u0443\u0432\u0430\u0442\u0438 \u0430\u043a\u0446\u0456\u0457 \u0442\u0430 \u043a\u0443\u043f\u043e\u043d\u0438.",
-    enterEmail: "\u0412\u0432\u0435\u0434\u0456\u0442\u044c email",
+      "Підпишіться, щоб отримувати акції та купони.",
+    enterEmail: "Введіть email",
     subscribeBtnAria:
-      "\u041f\u0456\u0434\u043f\u0438\u0441\u0430\u0442\u0438\u0441\u044f",
+      "Підписатися",
     subscribeSuccess:
-      "\u0414\u044f\u043a\u0443\u0454\u043c\u043e! \u0412\u0438 \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u0456.",
+      "Дякуємо! Ви підписані.",
     subscribeExists:
-      "\u0426\u044f \u043f\u043e\u0448\u0442\u0430 \u0432\u0436\u0435 \u043f\u0456\u0434\u043f\u0438\u0441\u0430\u043d\u0430.",
+      "Ця пошта вже підписана.",
     subscribeInvalid:
-      "\u0412\u0432\u0435\u0434\u0456\u0442\u044c \u043a\u043e\u0440\u0435\u043a\u0442\u043d\u0443 email-\u0430\u0434\u0440\u0435\u0441\u0443.",
+      "Введіть коректну email-адресу.",
     subscribeError:
-      "\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u043e\u0444\u043e\u0440\u043c\u0438\u0442\u0438 \u043f\u0456\u0434\u043f\u0438\u0441\u043a\u0443. \u0421\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0449\u0435 \u0440\u0430\u0437.",
-    support: "\u041f\u0456\u0434\u0442\u0440\u0438\u043c\u043a\u0430",
+      "Не вдалося оформити підписку. Спробуйте ще раз.",
+    support: "Підтримка",
     supportAddress:
-      "\u0432\u0443\u043b. \u0421\u043e\u043d\u044f\u0447\u043d\u0430, 15, \u043a\u0432. 24, \u041a\u0438\u0457\u0432, 03150, \u0423\u043a\u0440\u0430\u0457\u043d\u0430",
-    account: "\u0410\u043a\u0430\u0443\u043d\u0442",
-    myAccount: "\u041c\u0456\u0439 \u043a\u0430\u0431\u0456\u043d\u0435\u0442",
+      "вул. Сонячна, 15, кв. 24, Київ, 03150, Україна",
+    account: "Акаунт",
+    myAccount: "Мій кабінет",
     loginRegister:
-      "\u0412\u0445\u0456\u0434 / \u0420\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044f",
-    cart: "\u041a\u043e\u0448\u0438\u043a",
-    favorites: "\u041e\u0431\u0440\u0430\u043d\u0435",
-    shop: "\u041c\u0430\u0433\u0430\u0437\u0438\u043d",
+      "Вхід / Реєстрація",
+    cart: "Кошик",
+    favorites: "Обране",
+    shop: "Магазин",
     quickLink:
-      "\u0428\u0432\u0438\u0434\u043a\u0456 \u043f\u043e\u0441\u0438\u043b\u0430\u043d\u043d\u044f",
+      "Швидкі посилання",
     privacy:
-      "\u041f\u043e\u043b\u0456\u0442\u0438\u043a\u0430 \u043a\u043e\u043d\u0444\u0456\u0434\u0435\u043d\u0446\u0456\u0439\u043d\u043e\u0441\u0442\u0456",
+      "Політика конфіденційності",
     terms:
-      "\u0423\u043c\u043e\u0432\u0438 \u043a\u043e\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u043d\u043d\u044f",
-    faq: "\u041f\u0438\u0442\u0430\u043d\u043d\u044f \u0442\u0430 \u0432\u0456\u0434\u043f\u043e\u0432\u0456\u0434\u0456",
-    contact: "\u041a\u043e\u043d\u0442\u0430\u043a\u0442\u0438",
+      "Умови користування",
+    faq: "Питання та відповіді",
+    contact: "Контакти",
   },
   steps: {
     signIn: "Вхід",
