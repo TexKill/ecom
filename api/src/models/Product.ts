@@ -1,4 +1,5 @@
-import { Schema, model } from "mongoose";
+import { Schema } from "mongoose";
+import { catalogConnection } from "../db/catalog";
 import { IProduct, IReview } from "../types";
 
 const reviewSchema = new Schema<IReview>(
@@ -6,14 +7,14 @@ const reviewSchema = new Schema<IReview>(
     name: { type: String, required: true },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
-    user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    user: { type: String, required: true },
   },
   { timestamps: true },
 );
 
 const productSchema = new Schema<IProduct>(
   {
-    user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    user: { type: String, required: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     images: {
@@ -51,4 +52,6 @@ productSchema.pre("validate", function syncProductImages() {
   this.image = normalizedImages[0] || this.image?.trim() || "";
 });
 
-export const Product = model<IProduct>("Product", productSchema);
+export const Product =
+  catalogConnection.models.Product ||
+  catalogConnection.model<IProduct>("Product", productSchema);

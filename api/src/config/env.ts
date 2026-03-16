@@ -3,6 +3,11 @@ import { z } from "zod";
 
 dotenv.config();
 
+const rawEnv = {
+  ...process.env,
+  MONGODB_URL: process.env.MONGODB_URL ?? process.env.MONGOOSEDB_URL,
+};
+
 const booleanFromEnv = (defaultValue: "true" | "false" = "false") =>
   z.preprocess((value) => {
     if (value === undefined || value === null || value === "") return defaultValue;
@@ -21,7 +26,8 @@ const envSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     PORT: z.coerce.number().int().min(1).max(65535).default(9000),
-    MONGOOSEDB_URL: z.string().trim().min(1, "MONGOOSEDB_URL is required"),
+    MONGODB_URL: z.string().trim().min(1, "MONGODB_URL is required"),
+    POSTGRES_URL: z.string().trim().min(1, "POSTGRES_URL is required"),
     JWT_SECRET: z.string().trim().min(1, "JWT_SECRET is required"),
     CORS_ORIGIN: z.string().default("http://localhost:3000"),
     ENABLE_SEED_ROUTES: booleanFromEnv("false"),
@@ -67,7 +73,7 @@ const envSchema = z
     }
   });
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.safeParse(rawEnv);
 
 if (!parsed.success) {
   const issues = parsed.error.issues

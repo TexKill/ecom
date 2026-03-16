@@ -92,7 +92,7 @@ export const addProductReview = async (args: {
     throw httpError(404, "Product not found");
   }
 
-  const alreadyReviewed = product.reviews.find((r) => r.user.toString() === userId);
+  const alreadyReviewed = product.reviews.find((r: { user: string }) => r.user.toString() === userId);
   if (alreadyReviewed) {
     throw httpError(400, "Product already reviewed");
   }
@@ -106,7 +106,8 @@ export const addProductReview = async (args: {
 
   product.numReviews = product.reviews.length;
   product.rating =
-    product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length;
+    product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
+    product.reviews.length;
 
   await product.save();
   await invalidateProductCaches(productId);
@@ -128,7 +129,7 @@ export const removeProductReview = async (productId: string, reviewId: string) =
   product.rating =
     product.reviews.length === 0
       ? 0
-      : product.reviews.reduce((acc, review) => acc + review.rating, 0) /
+      : product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
         product.reviews.length;
 
   await product.save();

@@ -5,9 +5,10 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useProductFilters } from "@/store/useProductFilters";
 import { fetchProductFilters } from "@/lib/api/products";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { getCategoryLabel } from "@/lib/categoryLabels";
 
 export default function FiltersSidebar() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const {
     category,
     setCategory,
@@ -106,7 +107,7 @@ export default function FiltersSidebar() {
                       : "text-gray-600 hover:text-black"
                   }`}
                 >
-                  {cat}
+                  {getCategoryLabel(cat, lang)}
                 </button>
               ))}
             </div>

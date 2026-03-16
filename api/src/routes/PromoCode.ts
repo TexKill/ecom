@@ -3,16 +3,20 @@ import asyncHandler from "express-async-handler";
 import { protect } from "../middleware/Auth";
 import { admin } from "../middleware/Admin";
 import { validateBody, validateParams, validateQuery } from "../middleware/Validate";
-import { PromoCode } from "../models/PromoCode";
 import {
   createPromoCodeSchema,
   promoCodeIdParamSchema,
   promoCodeQuerySchema,
   updatePromoCodeSchema,
 } from "../validation/promoCode";
-import { validatePromoCodeForSubtotal } from "../services/PromoCodeService";
+import {
+  createPromoCode,
+  deletePromoCodeById,
+  getPromoCodes,
+  updatePromoCodeById,
+  validatePromoCodeForSubtotal,
+} from "../services/PromoCodeService";
 import { AuthRequest } from "../types/auth";
-import { httpError } from "../utils/httpError";
 
 const promoCodeRoute = express.Router();
 
@@ -27,15 +31,7 @@ promoCodeRoute.get(
     res.json({
       valid: true,
       discountAmount: result.discountAmount,
-      promoCode: {
-        _id: result.promoCode._id,
-        code: result.promoCode.code,
-        type: result.promoCode.type,
-        value: result.promoCode.value,
-        minOrderAmount: result.promoCode.minOrderAmount,
-        isActive: result.promoCode.isActive,
-        expiresAt: result.promoCode.expiresAt,
-      },
+      promoCode: result.promoCode,
     });
   }),
 );
@@ -45,8 +41,7 @@ promoCodeRoute.get(
   protect,
   admin,
   asyncHandler(async (_req: AuthRequest, res: Response) => {
-    const promoCodes = await PromoCode.find({}).sort({ createdAt: -1 });
-    res.json(promoCodes);
+    res.json(await getPromoCodes());
   }),
 );
 
@@ -56,17 +51,7 @@ promoCodeRoute.post(
   admin,
   validateBody(createPromoCodeSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const code = String(req.body.code).trim().toUpperCase();
-    const existing = await PromoCode.findOne({ code });
-    if (existing) {
-      throw httpError(409, "Promo code already exists");
-    }
-
-    const promoCode = await PromoCode.create({
-      ...req.body,
-      code,
-      expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined,
-    });
+    const promoCode = await createPromoCode(req.body);
     res.status(201).json(promoCode);
   }),
 );
@@ -78,31 +63,7 @@ promoCodeRoute.put(
   validateParams(promoCodeIdParamSchema),
   validateBody(updatePromoCodeSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const promoCode = await PromoCode.findById(String(req.params.id));
-    if (!promoCode) {
-      throw httpError(404, "Promo code not found");
-    }
-
-    if (req.body.code !== undefined) {
-      promoCode.code = String(req.body.code).trim().toUpperCase();
-    }
-    if (req.body.type !== undefined) {
-      promoCode.type = req.body.type;
-    }
-    if (req.body.value !== undefined) {
-      promoCode.value = Number(req.body.value);
-    }
-    if (req.body.minOrderAmount !== undefined) {
-      promoCode.minOrderAmount = Number(req.body.minOrderAmount);
-    }
-    if (req.body.isActive !== undefined) {
-      promoCode.isActive = Boolean(req.body.isActive);
-    }
-    if (req.body.expiresAt !== undefined) {
-      promoCode.expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : undefined;
-    }
-
-    await promoCode.save();
+    const promoCode = await updatePromoCodeById(String(req.params.id), req.body);
     res.json(promoCode);
   }),
 );
@@ -113,12 +74,7 @@ promoCodeRoute.delete(
   admin,
   validateParams(promoCodeIdParamSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
-    const promoCode = await PromoCode.findById(String(req.params.id));
-    if (!promoCode) {
-      throw httpError(404, "Promo code not found");
-    }
-
-    await promoCode.deleteOne();
+    await deletePromoCodeById(String(req.params.id));
     res.json({ message: "Promo code removed" });
   }),
 );

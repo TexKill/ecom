@@ -1,48 +1,60 @@
-import { Types } from "mongoose";
-import { User } from "../models/User";
+import { prisma } from "../db/commerce";
 import type { ICartItem } from "../types";
 import { httpError } from "../utils/httpError";
+import { toApiCartItem } from "../utils/commerceSerializers";
+import { generateDbId } from "../utils/ids";
 
-type CartPayloadItem = {
-  productId: string;
-  name: string;
-  image: string;
-  price: number;
-  countInStock: number;
-  qty: number;
-};
+type CartPayloadItem = ICartItem;
 
 export const getCartByUserId = async (userId: string): Promise<ICartItem[]> => {
-  const user = await User.findById(userId).select("cart").lean();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) {
     throw httpError(404, "User not found");
   }
-  return user.cart as ICartItem[];
+
+  const items = await prisma.cartItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return items.map(toApiCartItem);
 };
 
 export const syncCartByUserId = async (
   userId: string,
   items: CartPayloadItem[],
 ): Promise<ICartItem[]> => {
-  const normalized = items.map((item) => ({
-    ...item,
-    productId: new Types.ObjectId(item.productId),
-  }));
-
-  const user = await User.findByIdAndUpdate(
-    userId,
-    { $set: { cart: normalized } },
-    { returnDocument: "after" },
-  ).select("cart");
-
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) {
     throw httpError(404, "User not found");
   }
 
-  return user.cart as ICartItem[];
+  await prisma.$transaction([
+    prisma.cartItem.deleteMany({ where: { userId } }),
+    ...items.map((item) =>
+      prisma.cartItem.create({
+        data: {
+          id: generateDbId(),
+          userId,
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          countInStock: item.countInStock,
+          qty: item.qty,
+        },
+      }),
+    ),
+  ]);
+
+  const nextItems = await prisma.cartItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return nextItems.map(toApiCartItem);
 };
 
 export const clearCartByUserId = async (userId: string): Promise<void> => {
-  await User.findByIdAndUpdate(userId, { cart: [] });
+  await prisma.cartItem.deleteMany({ where: { userId } });
 };
-

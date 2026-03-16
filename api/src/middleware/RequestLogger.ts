@@ -5,7 +5,7 @@ import { logger } from "../utils/logger";
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const start = process.hrtime.bigint();
   const requestId = randomUUID();
-  req.requestId = requestId;
+  (req as Request & { requestId?: string }).requestId = requestId;
   res.setHeader("x-request-id", requestId);
 
   res.on("finish", () => {
@@ -26,4 +26,3 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
   next();
 };
-

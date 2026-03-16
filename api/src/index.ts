@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
@@ -18,6 +17,8 @@ import { logger } from "./utils/logger";
 import { requestLogger } from "./middleware/RequestLogger";
 import { createRateLimit } from "./middleware/RateLimit";
 import { initRedisConnection } from "./utils/redis";
+import { initCatalogConnection } from "./db/catalog";
+import { initCommerceConnection } from "./db/commerce";
 
 const app = express();
 const PORT = env.PORT;
@@ -43,12 +44,14 @@ app.use(
   }),
 );
 
-mongoose
-  .connect(env.MONGOOSEDB_URL)
-  .then(() => logger.info("Connected to MongoDB"))
-  .catch((err: Error) => logger.error("Error connecting to MongoDB", { err }));
-
-void initRedisConnection();
+void Promise.all([
+  initCatalogConnection(),
+  initCommerceConnection(),
+  initRedisConnection(),
+]).catch((error) => {
+  logger.error("Failed to initialize application dependencies", { error });
+  process.exit(1);
+});
 
 if (env.ENABLE_SEED_ROUTES) {
   app.use("/api/seed", databaseSeeder);

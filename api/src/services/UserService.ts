@@ -1,45 +1,33 @@
-import { User } from "../models/User";
+import bcrypt from "bcryptjs";
+import { prisma } from "../db/commerce";
 import generateToken from "../utils/tokenGenerate";
 import { httpError } from "../utils/httpError";
+import { toApiUser } from "../utils/commerceSerializers";
+import { generateDbId } from "../utils/ids";
 
-type AuthUserResponse = {
-  _id: unknown;
-  name: string;
-  email: string;
-  isAdmin: boolean;
+type AuthUserResponse = ReturnType<typeof toApiUser> & {
   token: string;
-  createdAt: Date;
 };
 
-type ProfileResponse = {
-  _id: unknown;
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  createdAt: Date;
-};
+type ProfileResponse = ReturnType<typeof toApiUser>;
 
 const toAuthResponse = (user: {
-  _id: any;
+  id: string;
   name: string;
   email: string;
   isAdmin: boolean;
   createdAt: Date;
 }) => ({
-  _id: user._id,
-  name: user.name,
-  email: user.email,
-  isAdmin: user.isAdmin,
-  token: generateToken(user._id),
-  createdAt: user.createdAt,
+  ...toApiUser(user),
+  token: generateToken(user.id),
 });
 
 export const loginUser = async (
   email: string,
   password: string,
 ): Promise<AuthUserResponse> => {
-  const user = await User.findOne({ email });
-  if (!user || !(await user.matchPassword(password))) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     throw httpError(401, "Invalid email or password");
   }
   return toAuthResponse(user);
@@ -52,59 +40,59 @@ export const registerUser = async (
   password: string,
 ): Promise<AuthUserResponse> => {
   const name = `${firstName} ${lastName}`.trim();
-  const existing = await User.findOne({ email }).lean();
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw httpError(400, "User already exists");
   }
 
-  const user = await User.create({ name, email, password });
-  if (!user) {
-    throw httpError(400, "Invalid user data");
-  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: {
+      id: generateDbId(),
+      name,
+      email,
+      password: hashedPassword,
+    },
+  });
 
   return toAuthResponse(user);
 };
 
 export const getUserProfile = async (userId: string): Promise<ProfileResponse> => {
-  const user = await User.findById(userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw httpError(404, "User not found");
   }
 
-  return {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    isAdmin: user.isAdmin,
-    createdAt: user.createdAt,
-  };
+  return toApiUser(user);
 };
 
 export const updateUserProfile = async (
   userId: string,
   payload: { name?: string; email?: string; password?: string },
 ): Promise<AuthUserResponse> => {
-  const user = await User.findById(userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw httpError(404, "User not found");
   }
 
-  user.name = payload.name || user.name;
-  user.email = payload.email || user.email;
-  if (payload.password) {
-    user.password = payload.password;
-  }
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: payload.name || user.name,
+      email: payload.email || user.email,
+      ...(payload.password ? { password: await bcrypt.hash(payload.password, 10) } : {}),
+    },
+  });
 
-  const updatedUser = await user.save();
   return toAuthResponse(updatedUser);
 };
 
 export const refreshUserSession = async (userId: string): Promise<AuthUserResponse> => {
-  const user = await User.findById(userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
     throw httpError(404, "User not found");
   }
 
   return toAuthResponse(user);
 };
-

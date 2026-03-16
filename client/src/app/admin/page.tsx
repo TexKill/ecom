@@ -36,6 +36,7 @@ import Pagination from "@/components/ui/Pagination";
 import { getOrderStatusMeta } from "@/lib/orderStatus";
 import Toast from "@/components/ui/Toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { getCategoryLabel } from "@/lib/categoryLabels";
 
 const emptyForm: ProductPayload = {
   name: "",
@@ -76,7 +77,7 @@ const isAdminTab = (value: string): value is AdminTab =>
   value === "promos";
 
 export default function AdminPage() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useAuthStore((s) => s.user);
@@ -901,6 +902,9 @@ export default function AdminPage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-3 py-2 text-left">{t.admin.name}</th>
+                        <th className="px-3 py-2 text-left">
+                          {t.admin.category}
+                        </th>
                         <th className="px-3 py-2 text-left">{t.admin.price}</th>
                         <th className="px-3 py-2 text-left">{t.admin.stock}</th>
                         <th className="px-3 py-2 text-left">
@@ -912,12 +916,21 @@ export default function AdminPage() {
                       {products.map((product) => (
                         <tr key={product._id} className="border-t">
                           <td className="px-3 py-2">{product.name}</td>
+                          <td className="px-3 py-2 text-gray-600">
+                            {getCategoryLabel(product.category, lang)}
+                          </td>
                           <td className="px-3 py-2">
                             ₴{product.price.toFixed(2)}
                           </td>
                           <td className="px-3 py-2">{product.countInStock}</td>
                           <td className="px-3 py-2">
                             <div className="flex gap-2">
+                              <Link
+                                href={`/products/${product._id}`}
+                                className="rounded border border-gray-300 px-2 py-1 hover:border-black"
+                              >
+                                {t.admin.view}
+                              </Link>
                               <button
                                 onClick={() => startEdit(product)}
                                 className="rounded border border-gray-300 px-2 py-1 hover:border-black"

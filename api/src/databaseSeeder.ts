@@ -1,10 +1,11 @@
 import express, { Request, Response } from "express";
 import asyncHandler from "express-async-handler";
-import { User } from "./models/User";
 import { Product } from "./models/Product";
 import users from "./data/Users";
 import products from "./data/Products";
 import { env } from "./config/env";
+import { prisma } from "./db/commerce";
+import { generateDbId } from "./utils/ids";
 
 const router = express.Router();
 
@@ -20,34 +21,43 @@ router.use((req: Request, res: Response, next) => {
   next();
 });
 
-// @route POST /api/seed/users
 router.post(
   "/users",
-  asyncHandler(async (req: Request, res: Response) => {
-    await User.deleteMany({});
-    const UserSeeder = await User.insertMany(users);
+  asyncHandler(async (_req: Request, res: Response) => {
+    await prisma.$transaction([
+      prisma.paymentLog.deleteMany(),
+      prisma.cartItem.deleteMany(),
+      prisma.favoriteItem.deleteMany(),
+      prisma.order.deleteMany(),
+      prisma.user.deleteMany(),
+    ]);
+
+    const payload = users.map((user) => ({
+      id: generateDbId(),
+      ...user,
+    }));
+
+    await prisma.user.createMany({ data: payload });
+    const UserSeeder = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
     res.send({ UserSeeder });
   }),
 );
 
-// @route POST /api/seed/products
 router.post(
   "/products",
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     await Product.deleteMany({});
 
-    // Знаходимо адміна з БД
-    const adminUser = await User.findOne({ isAdmin: true });
+    const adminUser = await prisma.user.findFirst({ where: { isAdmin: true } });
 
     if (!adminUser) {
       res.status(400);
-      throw new Error("Спочатку запустіть POST /api/seed/users");
+      throw new Error("Run POST /api/seed/users first");
     }
 
-    // user for each product
-    const productsWithUser = products.map((p) => ({
-      ...p,
-      user: adminUser._id,
+    const productsWithUser = products.map((product) => ({
+      ...product,
+      user: adminUser.id,
     }));
 
     const ProductSeeder = await Product.insertMany(productsWithUser);

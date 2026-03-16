@@ -1,55 +1,71 @@
-import { User } from "../models/User";
+import { prisma } from "../db/commerce";
 import { Product } from "../models/Product";
 import type { IFavoriteItem } from "../types";
 import { httpError } from "../utils/httpError";
+import { toApiFavoriteItem } from "../utils/commerceSerializers";
+import { generateDbId } from "../utils/ids";
 
 export const getFavoritesByUserId = async (userId: string): Promise<IFavoriteItem[]> => {
-  const user = await User.findById(userId).select("favorites").lean();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) {
     throw httpError(404, "User not found");
   }
-  return (user.favorites || []) as IFavoriteItem[];
+
+  const items = await prisma.favoriteItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return items.map(toApiFavoriteItem);
 };
 
 export const toggleFavoriteByUserId = async (
   userId: string,
   productId: string,
 ): Promise<{ action: "added" | "removed"; items: IFavoriteItem[] }> => {
-  const product = await Product.findById(productId).select(
-    "_id name image price countInStock",
-  );
+  const [product, user, existing] = await Promise.all([
+    Product.findById(productId).select("_id name image price countInStock"),
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+    prisma.favoriteItem.findFirst({ where: { userId, productId } }),
+  ]);
+
   if (!product) {
     throw httpError(404, "Product not found");
   }
 
-  const user = await User.findById(userId);
   if (!user) {
     throw httpError(404, "User not found");
   }
 
-  const existingIndex = user.favorites.findIndex(
-    (item) => item.productId.toString() === productId,
-  );
-
-  if (existingIndex >= 0) {
-    user.favorites.splice(existingIndex, 1);
-    await user.save();
-    return { action: "removed", items: user.favorites as IFavoriteItem[] };
+  if (existing) {
+    await prisma.favoriteItem.delete({ where: { id: existing.id } });
+    const items = await prisma.favoriteItem.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+    });
+    return { action: "removed", items: items.map(toApiFavoriteItem) };
   }
 
-  user.favorites.push({
-    productId: product._id,
-    name: product.name,
-    image: product.image,
-    price: product.price,
-    countInStock: product.countInStock,
-  } as any);
+  await prisma.favoriteItem.create({
+    data: {
+      id: generateDbId(),
+      userId,
+      productId,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      countInStock: product.countInStock,
+    },
+  });
 
-  await user.save();
-  return { action: "added", items: user.favorites as IFavoriteItem[] };
+  const items = await prisma.favoriteItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return { action: "added", items: items.map(toApiFavoriteItem) };
 };
 
 export const clearFavoritesByUserId = async (userId: string): Promise<void> => {
-  await User.findByIdAndUpdate(userId, { favorites: [] });
+  await prisma.favoriteItem.deleteMany({ where: { userId } });
 };
-

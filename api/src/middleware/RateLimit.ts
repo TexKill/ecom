@@ -36,6 +36,7 @@ export const createRateLimit = ({
   message = "Too many requests. Please try again later.",
 }: RateLimitOptions) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    const requestId = (req as Request & { requestId?: string }).requestId;
     const now = Date.now();
     if (buckets.size > CLEANUP_THRESHOLD) {
       for (const [key, value] of buckets.entries()) {
@@ -64,7 +65,7 @@ export const createRateLimit = ({
       res.setHeader("retry-after", String(retryAfterSec));
 
       logger.warn("Rate limit exceeded", {
-        requestId: req.requestId,
+        requestId,
         bucket,
         ip: req.ip,
         method: req.method,

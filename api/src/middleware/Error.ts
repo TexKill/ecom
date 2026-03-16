@@ -26,9 +26,11 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
+  const requestId = (req as Request & { requestId?: string }).requestId;
+
   if (err instanceof multer.MulterError) {
     logger.warn("Multer error", {
-      requestId: req.requestId,
+      requestId,
       method: req.method,
       path: req.originalUrl,
       code: err.code,
@@ -45,7 +47,7 @@ export const errorHandler = (
 
   if (err instanceof ZodError) {
     logger.warn("Request validation error", {
-      requestId: req.requestId,
+      requestId,
       method: req.method,
       path: req.originalUrl,
       errors: mapIssues(err),
@@ -63,7 +65,7 @@ export const errorHandler = (
 
   const logLevel = statusCode >= 500 ? "error" : "warn";
   logger[logLevel]("Request failed", {
-    requestId: req.requestId,
+    requestId,
     method: req.method,
     path: req.originalUrl,
     statusCode,

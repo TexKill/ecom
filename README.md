@@ -1,6 +1,12 @@
-﻿# Ecom Full-Stack
+# Ecom Full-Stack
 
-A full-stack e-commerce application with separate `api` (Express + MongoDB) and `client` (Next.js App Router) services.
+A full-stack e-commerce application with separate `api` (Express) and `client` (Next.js App Router) services.
+
+The backend uses polyglot persistence:
+
+- `MongoDB` for the product catalog
+- `PostgreSQL` for users, carts, favorites, orders, payments, promo codes, and subscribers
+- `Redis` for product caching
 
 ## Implemented Features
 
@@ -22,7 +28,8 @@ A full-stack e-commerce application with separate `api` (Express + MongoDB) and 
 ### Backend (`/api`)
 
 - Node.js, Express 5, TypeScript
-- MongoDB + Mongoose
+- MongoDB + Mongoose for catalog data
+- PostgreSQL + Prisma for commerce data
 - Redis (optional but recommended for caching)
 - Zod (validation)
 - JWT + bcryptjs
@@ -40,15 +47,18 @@ A full-stack e-commerce application with separate `api` (Express + MongoDB) and 
 ```text
 ecom/
 |-- api/
+|   |-- prisma/
 |   |-- src/
 |   |   |-- config/
+|   |   |-- db/
 |   |   |-- middleware/
 |   |   |-- models/
 |   |   |-- routes/
 |   |   |-- services/
 |   |   |-- validation/
 |   |   `-- utils/
-|   `-- Dockerfile
+|   |-- Dockerfile
+|   `-- prisma.config.ts
 |-- client/
 |   |-- src/
 |   |   |-- app/
@@ -56,8 +66,14 @@ ecom/
 |   |   |-- lib/
 |   |   `-- store/
 |   `-- Dockerfile
+|-- docs/
+|   `-- architecture.md
 `-- docker-compose.yml
 ```
+
+Architecture documentation:
+
+- `docs/architecture.md` - C4-style diagrams and polyglot persistence notes
 
 ## Local Development
 
@@ -67,6 +83,7 @@ ecom/
 cd api
 npm install
 cp .env.example .env
+npx prisma generate --config prisma.config.ts
 npm run dev
 ```
 
@@ -99,6 +116,8 @@ Services:
 
 - Client: `http://localhost:3000`
 - API: `http://localhost:9000`
+- MongoDB: `localhost:27017`
+- PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 
 Useful commands:
@@ -176,7 +195,8 @@ Template: `api/.env.example`
 
 Required API variables:
 
-- `MONGOOSEDB_URL`
+- `MONGODB_URL`
+- `POSTGRES_URL`
 - `JWT_SECRET`
 - `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
@@ -214,6 +234,46 @@ Then call endpoints with header `x-seed-key: your_secret_key`:
 - `POST /api/seed/users`
 - `POST /api/seed/products`
 
+## Migrations
+
+Initial Prisma migration:
+
+- `api/prisma/migrations/20260316_init_commerce/migration.sql`
+
+Generate Prisma client:
+
+```bash
+cd api
+npx prisma generate --config prisma.config.ts
+```
+
+Apply migrations to PostgreSQL:
+
+```bash
+cd api
+npx prisma migrate deploy --config prisma.config.ts
+```
+
+For local development with a running database, you can also use:
+
+```bash
+cd api
+npx prisma migrate dev --config prisma.config.ts
+```
+
+## Smoke Test
+
+After `docker compose up --build -d`, use this quick checklist:
+
+1. Open `http://localhost:9000/` and verify the API returns `{"status":"ok","service":"api"}`.
+2. Call `POST /api/seed/users` and `POST /api/seed/products` with the `x-seed-key` header if seed routes are enabled.
+3. Register a new user or log in as the seeded admin.
+4. Open the storefront and confirm products load from MongoDB.
+5. Add a product to cart and favorites, then refresh and confirm the data persists.
+6. Create an order and verify it appears in `myorders`.
+7. Open the admin page and verify orders, promo codes, and payment logs load.
+8. If LiqPay is configured, test checkout creation for an unpaid order.
+
 ## NPM Scripts
 
 ### `api/package.json`
@@ -222,8 +282,9 @@ Then call endpoints with header `x-seed-key: your_secret_key`:
 - `npm run start` - run with ts-node
 - `npm run build` - compile TypeScript to `dist`
 - `npm run prod` - run `dist/index.js`
-- `npm test` - run tests (`src/**/*.test.ts`)
+- `npm run test` - run tests (`src/**/*.test.ts`)
 - `npm run restock` - random restock script
+- `npm run prisma:generate` - generate Prisma client
 
 ### `client/package.json`
 

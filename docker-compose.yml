@@ -1,4 +1,28 @@
 services:
+  mongodb:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - appnet
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ecom_commerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - appnet
+
   redis:
     image: redis:8-alpine
     ports:
@@ -19,6 +43,8 @@ services:
     ports:
       - "${API_PORT:-9000}:${API_PORT:-9000}"
     depends_on:
+      - mongodb
+      - postgres
       - redis
     restart: unless-stopped
     networks:
@@ -51,3 +77,7 @@ services:
 networks:
   appnet:
     driver: bridge
+
+volumes:
+  mongodb_data:
+  postgres_data:

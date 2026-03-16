@@ -5,7 +5,7 @@ import { restockRandomProducts } from "../services/ProductService";
 
 const run = async () => {
   try {
-    await mongoose.connect(env.MONGOOSEDB_URL);
+    await mongoose.connect(env.MONGODB_URL);
     const updatedCount = await restockRandomProducts();
     logger.info("Random restock complete", { updatedCount });
   } catch (error) {
