@@ -31,18 +31,37 @@ const apiRateLimit = createRateLimit({
 const corsOrigins = env.CORS_ORIGIN.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+const devCorsOrigins =
+  env.NODE_ENV === "development"
+    ? [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+      ]
+    : [];
+const allowedCorsOrigins = Array.from(
+  new Set([...corsOrigins, ...devCorsOrigins]),
+);
+const corsMiddleware = cors({
+  origin(origin, callback) {
+    if (!origin || allowedCorsOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  credentials: true,
+});
 
 app.use(helmet());
 app.use(compression());
+app.use(corsMiddleware);
+app.options(/.*/, corsMiddleware);
 app.use(express.json());
 app.use(requestLogger);
 app.use("/api", apiRateLimit);
-app.use(
-  cors({
-    origin: corsOrigins,
-    credentials: true,
-  }),
-);
 
 void Promise.all([
   initCatalogConnection(),

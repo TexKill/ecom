@@ -139,19 +139,26 @@ export default function ProductPage() {
           const sharedTokenCount = candidateTokens.filter((token) =>
             baseTokens.includes(token),
           ).length;
+          const sameBrand = candidate.brand === product.brand;
+          const sameCategory = candidate.category === product.category;
 
           const score =
-            (candidate.brand === product.brand ? 3 : 0) +
-            (candidate.category === product.category ? 2 : 0) +
+            (sameBrand ? 3 : 0) +
+            (sameCategory ? 2 : 0) +
             sharedTokenCount * 5;
 
           return {
             candidate,
             score,
+            sameBrand,
+            sameCategory,
             sharedTokenCount,
           };
         })
-        .filter(({ sharedTokenCount }) => sharedTokenCount > 0)
+        .filter(
+          ({ sharedTokenCount, sameBrand, sameCategory }) =>
+            sharedTokenCount > 0 || sameBrand || sameCategory,
+        )
         .sort((a, b) => b.score - a.score)
         .map(({ candidate }) => candidate);
 
