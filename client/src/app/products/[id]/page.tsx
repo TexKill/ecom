@@ -236,7 +236,7 @@ export default function ProductPage() {
         values: [String(product.numReviews)],
       },
     ];
-  }, [lang, product, t.product.inStock, t.product.outOfStock]);
+  }, [product, t.product]);
   const productSections = useMemo(
     () => [
       {
@@ -258,7 +258,48 @@ export default function ProductPage() {
         count: similarProducts.length,
       },
     ],
-    [lang, product?.numReviews, similarProducts.length],
+    [product?.numReviews, similarProducts.length, t.product],
+  );
+
+  const characteristicsRowsI18n = useMemo(() => {
+    if (!product) return [];
+
+    return [
+      { label: t.product.brandLabel, values: [product.brand] },
+      { label: t.product.categoryLabel, values: [product.category] },
+      {
+        label: t.product.priceLabel,
+        values: [`\u20B4${product.price.toFixed(2)}`],
+      },
+      {
+        label: t.product.availabilityLabel,
+        values: [
+          product.countInStock > 0
+            ? `${t.product.inStock} (${product.countInStock})`
+            : t.product.outOfStock,
+        ],
+      },
+      { label: t.product.rating, values: [`${product.rating.toFixed(1)} / 5`] },
+      { label: t.product.reviewsTitle, values: [String(product.numReviews)] },
+    ];
+  }, [product, t.product]);
+
+  const productSectionsI18n = useMemo(
+    () => [
+      { id: "about-product", label: t.product.aboutProduct },
+      { id: "characteristics", label: t.product.characteristicsLabel },
+      {
+        id: "reviews",
+        label: t.product.reviewsAndQuestions,
+        count: product?.numReviews ?? 0,
+      },
+      {
+        id: "buy-together",
+        label: t.product.buyTogether,
+        count: similarProducts.length,
+      },
+    ],
+    [product?.numReviews, similarProducts.length, t.product],
   );
 
   const selectedImageIndex = Math.max(productImages.indexOf(selectedImage), 0);
@@ -308,10 +349,10 @@ export default function ProductPage() {
     if (typeof window === "undefined") return;
 
     const handleScroll = () => {
-      let currentSection = productSections[0]?.id ?? "about-product";
+      let currentSection = productSectionsI18n[0]?.id ?? "about-product";
       const aboutSection = document.getElementById("about-product");
 
-      productSections.forEach((section) => {
+      productSectionsI18n.forEach((section) => {
         const element = document.getElementById(section.id);
         if (!element) return;
 
@@ -333,7 +374,7 @@ export default function ProductPage() {
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [productSections]);
+  }, [productSectionsI18n]);
 
   if (isLoading) {
     return (
@@ -422,7 +463,7 @@ export default function ProductPage() {
         <div className="flex flex-col gap-3 py-2 xl:flex-row xl:items-center xl:justify-between">
           <div className="overflow-x-auto">
             <div className="flex min-w-max items-center gap-5 sm:gap-7">
-              {productSections.map((section) => {
+              {productSectionsI18n.map((section) => {
                 const isActive = activeSectionId === section.id;
 
                 return (
@@ -631,7 +672,7 @@ export default function ProductPage() {
 
           <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
-              {lang === "uk" ? "Коротко" : "In Brief"}
+              {t.product.brief}
             </p>
             <p className="mt-3 leading-relaxed text-gray-700">
               {localizedDescription}
@@ -693,8 +734,8 @@ export default function ProductPage() {
         id="about-product-hidden"
         className="hidden scroll-mt-28 mt-2 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8"
       >
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-600">
-          {lang === "uk" ? "Про товар" : "About Product"}
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-black">
+          {t.product.aboutProduct}
         </p>
         <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
           <div>
@@ -741,12 +782,12 @@ export default function ProductPage() {
         id="characteristics"
         className="scroll-mt-28 mt-8 rounded-3xl border border-gray-200 bg-gray-50/70 p-6 sm:p-8"
       >
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-600">
-          {lang === "uk" ? "Характеристики" : "Characteristics"}
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-black">
+          {t.product.characteristicsLabel}
         </p>
         <div className="mt-6 rounded-2xl bg-white p-2 sm:p-4">
           <div className="space-y-4">
-            {characteristicsRows.map((row) => (
+            {characteristicsRowsI18n.map((row) => (
               <div
                 key={row.label}
                 className="grid gap-2  pb-3 sm:grid-cols-[minmax(180px,420px)_1fr] sm:gap-4"

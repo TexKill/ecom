@@ -123,6 +123,15 @@ export type Messages = {
     submitFail: string;
     removeSuccess: string;
     removeFail: string;
+    aboutProduct: string;
+    characteristicsLabel: string;
+    reviewsAndQuestions: string;
+    buyTogether: string;
+    brief: string;
+    brandLabel: string;
+    categoryLabel: string;
+    priceLabel: string;
+    availabilityLabel: string;
   };
   favorites: {
     title: string;
@@ -474,6 +483,15 @@ const en: Messages = {
     submitFail: "Failed to submit review",
     removeSuccess: "Review removed",
     removeFail: "Failed to remove review",
+    aboutProduct: "About Product",
+    characteristicsLabel: "Characteristics",
+    reviewsAndQuestions: "Reviews & Questions",
+    buyTogether: "Buy Together",
+    brief: "In Brief",
+    brandLabel: "Brand",
+    categoryLabel: "Category",
+    priceLabel: "Price",
+    availabilityLabel: "Availability",
   },
   favorites: {
     title: "Favorites",
@@ -835,6 +853,15 @@ const uk: Messages = {
     submitFail: "Не вдалося надіслати відгук",
     removeSuccess: "Відгук видалено",
     removeFail: "Не вдалося видалити відгук",
+    aboutProduct: "Про товар",
+    characteristicsLabel: "Характеристики",
+    reviewsAndQuestions: "Відгуки та питання",
+    buyTogether: "Купують разом",
+    brief: "Коротко",
+    brandLabel: "Бренд",
+    categoryLabel: "Категорія",
+    priceLabel: "Ціна",
+    availabilityLabel: "Наявність",
   },
   favorites: {
     ...en.favorites,
