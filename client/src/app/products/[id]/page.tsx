@@ -78,6 +78,8 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState("");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [touchEndX, setTouchEndX] = useState<number | null>(null);
+  const [activeSectionId, setActiveSectionId] = useState("about-product");
+  const [showStickySummary, setShowStickySummary] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
 
   const showToast = (message: string) => {
@@ -105,7 +107,12 @@ export default function ProductPage() {
   });
 
   const { data: similarProductsData } = useQuery({
-    queryKey: ["similar-products", product?.category, product?.brand, product?._id],
+    queryKey: [
+      "similar-products",
+      product?.category,
+      product?.brand,
+      product?._id,
+    ],
     queryFn: async () => {
       if (!product) {
         return { products: [] as IProduct[] };
@@ -124,7 +131,10 @@ export default function ProductPage() {
         }),
       ]);
 
-      const mergedProducts = [...categoryResponse.products, ...brandResponse.products];
+      const mergedProducts = [
+        ...categoryResponse.products,
+        ...brandResponse.products,
+      ];
       const baseTokens = tokenizeProductName(product.name);
 
       const uniqueProducts = mergedProducts.filter(
@@ -143,9 +153,7 @@ export default function ProductPage() {
           const sameCategory = candidate.category === product.category;
 
           const score =
-            (sameBrand ? 3 : 0) +
-            (sameCategory ? 2 : 0) +
-            sharedTokenCount * 5;
+            (sameBrand ? 3 : 0) + (sameCategory ? 2 : 0) + sharedTokenCount * 5;
 
           return {
             candidate,
@@ -180,6 +188,8 @@ export default function ProductPage() {
     return (product.descriptionEn || product.description || "").trim();
   }, [product, lang]);
 
+  const localizedLongDescription = localizedDescription;
+
   const productImages = useMemo(() => {
     if (!product) return [];
     if (product.images?.length) {
@@ -193,6 +203,63 @@ export default function ProductPage() {
   }, [productImages]);
 
   const similarProducts = similarProductsData?.products || [];
+  const characteristicsRows = useMemo(() => {
+    if (!product) return [];
+
+    return [
+      {
+        label: lang === "uk" ? "Бренд" : "Brand",
+        values: [product.brand],
+      },
+      {
+        label: lang === "uk" ? "Категорія" : "Category",
+        values: [product.category],
+      },
+      {
+        label: lang === "uk" ? "Ціна" : "Price",
+        values: [`\u20B4${product.price.toFixed(2)}`],
+      },
+      {
+        label: lang === "uk" ? "Наявність" : "Availability",
+        values: [
+          product.countInStock > 0
+            ? `${t.product.inStock} (${product.countInStock})`
+            : t.product.outOfStock,
+        ],
+      },
+      {
+        label: lang === "uk" ? "Рейтинг" : "Rating",
+        values: [`${product.rating.toFixed(1)} / 5`],
+      },
+      {
+        label: lang === "uk" ? "Відгуки" : "Reviews",
+        values: [String(product.numReviews)],
+      },
+    ];
+  }, [lang, product, t.product.inStock, t.product.outOfStock]);
+  const productSections = useMemo(
+    () => [
+      {
+        id: "about-product",
+        label: lang === "uk" ? "Про товар" : "About Product",
+      },
+      {
+        id: "characteristics",
+        label: lang === "uk" ? "Характеристики" : "Characteristics",
+      },
+      {
+        id: "reviews",
+        label: lang === "uk" ? "Відгуки та питання" : "Reviews & Questions",
+        count: product?.numReviews ?? 0,
+      },
+      {
+        id: "buy-together",
+        label: lang === "uk" ? "Купують разом" : "Buy Together",
+        count: similarProducts.length,
+      },
+    ],
+    [lang, product?.numReviews, similarProducts.length],
+  );
 
   const selectedImageIndex = Math.max(productImages.indexOf(selectedImage), 0);
 
@@ -232,6 +299,41 @@ export default function ProductPage() {
       showPrevImage();
     }
   };
+
+  useEffect(() => {
+    setActiveSectionId("about-product");
+  }, [id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleScroll = () => {
+      let currentSection = productSections[0]?.id ?? "about-product";
+      const aboutSection = document.getElementById("about-product");
+
+      productSections.forEach((section) => {
+        const element = document.getElementById(section.id);
+        if (!element) return;
+
+        const top = element.getBoundingClientRect().top;
+        if (top <= 150) {
+          currentSection = section.id;
+        }
+      });
+
+      setActiveSectionId(currentSection);
+
+      if (aboutSection) {
+        const sectionBottom = aboutSection.getBoundingClientRect().bottom;
+        setShowStickySummary(sectionBottom <= 140);
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [productSections]);
 
   if (isLoading) {
     return (
@@ -311,12 +413,113 @@ export default function ProductPage() {
       </Link>
 
       {toast && (
-        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {toast}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+      <nav className="sticky top-[calc(var(--site-header-height,72px)+8px)] z-20 mb-10 rounded-2xl border border-gray-200 bg-white/95 px-3 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-3 py-2 xl:flex-row xl:items-center xl:justify-between">
+          <div className="overflow-x-auto">
+            <div className="flex min-w-max items-center gap-5 sm:gap-7">
+              {productSections.map((section) => {
+                const isActive = activeSectionId === section.id;
+
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => {
+                      const target = document.getElementById(section.id);
+                      if (!target) return;
+
+                      target.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                      setActiveSectionId(section.id);
+                    }}
+                    className={`relative whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "border-red-500 text-red-600"
+                        : "border-transparent text-gray-700 hover:text-red-600"
+                    }`}
+                  >
+                    {section.label}{" "}
+                    {typeof section.count === "number" && (
+                      <span className="font-semibold text-gray-900">
+                        {section.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {showStickySummary && (
+            <div className="flex flex-col gap-3 border-t border-gray-200 pt-3 sm:flex-row sm:items-center sm:justify-between xl:min-w-fit xl:border-t-0 xl:pt-0">
+              <div className="text-2xl font-bold text-gray-900">
+                {"\u20B4"}
+                {product.price.toFixed(2)}
+              </div>
+              <div className="flex gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const wasFavorite = isFavorite;
+                    await toggleFavorite(product, user?.token);
+                    showToast(
+                      wasFavorite
+                        ? t.product.removedFromFavorites
+                        : t.product.addedToFavorites,
+                    );
+                  }}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-gray-300 text-gray-700 transition-colors hover:border-red-500 hover:text-red-500"
+                  aria-label={
+                    isFavorite
+                      ? t.product.inFavorites
+                      : t.product.addToFavorites
+                  }
+                  title={
+                    isFavorite
+                      ? t.product.inFavorites
+                      : t.product.addToFavorites
+                  }
+                >
+                  <Heart
+                    size={18}
+                    className={isFavorite ? "fill-current text-red-500" : ""}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addItem(product, user?.token || "")}
+                  disabled={product.countInStock === 0}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-black text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-300"
+                  aria-label={
+                    product.countInStock === 0
+                      ? t.product.outOfStock
+                      : t.product.addToCart
+                  }
+                  title={
+                    product.countInStock === 0
+                      ? t.product.outOfStock
+                      : t.product.addToCart
+                  }
+                >
+                  <ShoppingCart size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <div
+        id="about-product"
+        className="scroll-mt-28 grid grid-cols-1 gap-12 md:grid-cols-2"
+      >
         <div className="space-y-4">
           <div
             className="relative h-100 overflow-hidden rounded-2xl border border-gray-100 bg-gray-50 md:h-150"
@@ -421,14 +624,19 @@ export default function ProductPage() {
             </span>
           </div>
 
-          <div className="mb-8 text-4xl font-bold text-red-500">
+          <div className="mb-8 text-4xl font-bold text-black">
             {"\u20B4"}
             {product.price.toFixed(2)}
           </div>
 
-          <p className="mb-8 leading-relaxed text-gray-700">
-            {localizedDescription}
-          </p>
+          <div className="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
+              {lang === "uk" ? "Коротко" : "In Brief"}
+            </p>
+            <p className="mt-3 leading-relaxed text-gray-700">
+              {localizedDescription}
+            </p>
+          </div>
 
           <div className="mb-8 border-t border-gray-200 py-6">
             <div className="flex items-center justify-between text-lg">
@@ -436,7 +644,7 @@ export default function ProductPage() {
               <span
                 className={
                   product.countInStock > 0
-                    ? "font-medium text-green-600"
+                    ? "font-medium text-red-600"
                     : "font-medium text-red-600"
                 }
               >
@@ -481,7 +689,92 @@ export default function ProductPage() {
         </div>
       </div>
 
-      <section className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <section
+        id="about-product-hidden"
+        className="hidden scroll-mt-28 mt-2 rounded-3xl border border-gray-200 bg-white p-6 sm:p-8"
+      >
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-600">
+          {lang === "uk" ? "Про товар" : "About Product"}
+        </p>
+        <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{product.name}</h2>
+            <p className="mt-4 whitespace-pre-line leading-8 text-gray-700">
+              {localizedLongDescription}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-gray-50 p-5">
+            <p className="text-sm font-semibold text-gray-900">
+              {lang === "uk" ? "Основне" : "Highlights"}
+            </p>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="flex items-center justify-between gap-3">
+                <span>{lang === "uk" ? "Бренд" : "Brand"}</span>
+                <span className="font-medium text-gray-900">
+                  {product.brand}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>{lang === "uk" ? "Категорія" : "Category"}</span>
+                <span className="font-medium text-gray-900">
+                  {product.category}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>{lang === "uk" ? "Рейтинг" : "Rating"}</span>
+                <span className="font-medium text-gray-900">
+                  {product.rating.toFixed(1)} / 5
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>{lang === "uk" ? "Відгуки" : "Reviews"}</span>
+                <span className="font-medium text-gray-900">
+                  {product.numReviews}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="characteristics"
+        className="scroll-mt-28 mt-8 rounded-3xl border border-gray-200 bg-gray-50/70 p-6 sm:p-8"
+      >
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-red-600">
+          {lang === "uk" ? "Характеристики" : "Characteristics"}
+        </p>
+        <div className="mt-6 rounded-2xl bg-white p-2 sm:p-4">
+          <div className="space-y-4">
+            {characteristicsRows.map((row) => (
+              <div
+                key={row.label}
+                className="grid gap-2  pb-3 sm:grid-cols-[minmax(180px,420px)_1fr] sm:gap-4"
+              >
+                <div className="flex items-end gap-3 text-sm text-gray-700 sm:text-base">
+                  <span className="shrink-0">{row.label}</span>
+                  <span className="hidden h-px flex-1 border-b border-dotted border-gray-300 sm:block" />
+                </div>
+                <div className="space-y-2 text-sm text-gray-900 sm:text-base">
+                  {row.values.map((value, index) => (
+                    <div
+                      key={`${row.label}-${index}`}
+                      className="wrap-break-word"
+                    >
+                      {value}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="reviews"
+        className="scroll-mt-28 mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3"
+      >
         <div className="lg:col-span-2 rounded-xl border border-gray-200 p-5">
           <h2 className="mb-4 text-xl font-semibold">
             {t.product.reviewsTitle}
@@ -608,7 +901,10 @@ export default function ProductPage() {
         </div>
       </section>
 
-      <section className="mt-14 rounded-3xl border border-gray-200 bg-gray-50/70 p-6 sm:p-8">
+      <section
+        id="buy-together"
+        className="scroll-mt-28 mt-14 rounded-3xl border border-gray-200 bg-gray-50/70 p-6 sm:p-8"
+      >
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">

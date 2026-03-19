@@ -8,6 +8,9 @@ type ProductPayload = {
   description: string;
   descriptionUk?: string;
   descriptionEn?: string;
+  longDescription?: string;
+  longDescriptionUk?: string;
+  longDescriptionEn?: string;
   image: string;
   images: string[];
   brand: string;
@@ -24,6 +27,21 @@ export const createProduct = async (userId: string, payload: ProductPayload) => 
     images,
     descriptionUk: payload.descriptionUk || payload.description,
     descriptionEn: payload.descriptionEn || payload.description,
+    longDescription:
+      payload.longDescription ||
+      payload.longDescriptionUk ||
+      payload.longDescriptionEn ||
+      payload.description,
+    longDescriptionUk:
+      payload.longDescriptionUk ||
+      payload.longDescription ||
+      payload.descriptionUk ||
+      payload.description,
+    longDescriptionEn:
+      payload.longDescriptionEn ||
+      payload.longDescription ||
+      payload.descriptionEn ||
+      payload.description,
     user: userId,
     rating: 0,
     numReviews: 0,
@@ -42,6 +60,25 @@ export const updateProduct = async (productId: string, payload: Partial<ProductP
 
   if (payload.images) {
     payload.image = payload.images[0];
+  }
+
+  if (payload.longDescription === undefined) {
+    if (payload.longDescriptionUk !== undefined || payload.longDescriptionEn !== undefined) {
+      payload.longDescription =
+        payload.longDescriptionUk ||
+        payload.longDescriptionEn ||
+        product.longDescription;
+    } else if (payload.description !== undefined && !product.longDescription) {
+      payload.longDescription = payload.description;
+    }
+  }
+
+  if (payload.longDescriptionUk === undefined && payload.longDescription !== undefined) {
+    payload.longDescriptionUk = payload.longDescription;
+  }
+
+  if (payload.longDescriptionEn === undefined && payload.longDescription !== undefined) {
+    payload.longDescriptionEn = payload.longDescription;
   }
 
   Object.assign(product, payload);

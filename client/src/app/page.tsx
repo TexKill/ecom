@@ -53,14 +53,14 @@ export default function HomePage() {
             <span className="text-red-500">{t.home.heroTitleAccent}</span>
           </h1>
           <p className="text-gray-400 text-sm">{t.home.heroSubtitle}</p>
-          <a
-            href="#products"
+          <Link
+            href="/products"
             className="self-start bg-red-500 hover:bg-red-600
               text-white px-6 py-3 rounded
               transition-colors duration-300"
           >
             {t.home.shopNow} -&gt;
-          </a>
+          </Link>
         </div>
 
         <div className="hidden md:flex text-8xl">🛍️</div>

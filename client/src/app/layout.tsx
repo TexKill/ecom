@@ -24,7 +24,9 @@ export default function RootLayout({
         <FiltersResetOnRoute />
         <Providers>
           <Header />
-          <main className="min-h-screen">{children}</main>
+          <main className="min-h-screen pt-[var(--site-header-height,72px)]">
+            {children}
+          </main>
           <Footer />
         </Providers>
       </body>

@@ -36,6 +36,9 @@ interface CartState {
 const API_BASE_URL = clientEnv.NEXT_PUBLIC_API_URL;
 
 const syncCartToServer = async (items: CartItem[], token: string) => {
+  const normalizedToken = token.trim();
+  if (!normalizedToken) return;
+
   try {
     await axios.post(
       `${API_BASE_URL}/api/cart`,
@@ -49,7 +52,7 @@ const syncCartToServer = async (items: CartItem[], token: string) => {
           qty: i.qty,
         })),
       },
-      { headers: { Authorization: `Bearer ${token}` } },
+      { headers: { Authorization: `Bearer ${normalizedToken}` } },
     );
   } catch (err) {
     console.error("Failed to sync cart:", err);
@@ -106,10 +109,10 @@ export const useCartStore = create<CartState>()(
 
       clearCart: async (token?) => {
         set({ items: [] });
-        if (token) {
+        if (token?.trim()) {
           try {
             await axios.delete(`${API_BASE_URL}/api/cart`, {
-              headers: { Authorization: `Bearer ${token}` },
+              headers: { Authorization: `Bearer ${token.trim()}` },
             });
           } catch (err) {
             console.error("Failed to clear cart on server:", err);
@@ -118,9 +121,12 @@ export const useCartStore = create<CartState>()(
       },
 
       loadCartFromServer: async (token) => {
+        const normalizedToken = token.trim();
+        if (!normalizedToken) return;
+
         try {
           const { data } = await axios.get(`${API_BASE_URL}/api/cart`, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${normalizedToken}` },
           });
           const items: CartItem[] = data.map((i: ServerCartItem) => ({
             _id: i.productId,

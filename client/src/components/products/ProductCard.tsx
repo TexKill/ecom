@@ -87,7 +87,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-red-500">₴{product.price.toFixed(2)}</span>
+          <span className="font-semibold text-gray-900">₴{product.price.toFixed(2)}</span>
         </div>
 
         <div className="flex items-center gap-1">

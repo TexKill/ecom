@@ -154,7 +154,7 @@ export default function FavoritesPage() {
                 >
                   {item.name}
                 </Link>
-                <p className="mt-1 font-semibold text-red-500">₴{item.price.toFixed(2)}</p>
+                <p className="mt-1 font-semibold text-gray-900">₴{item.price.toFixed(2)}</p>
                 <p className="mt-1 text-xs text-gray-500">
                   {item.countInStock > 0
                     ? `${t.favorites.inStock}: ${item.countInStock}`

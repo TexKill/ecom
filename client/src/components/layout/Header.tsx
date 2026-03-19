@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Search,
   ShoppingCart,
@@ -20,6 +20,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 export default function Header() {
   const router = useRouter();
   const { lang, setLang, t } = useLanguage();
+  const headerRef = useRef<HTMLElement | null>(null);
 
   const isHydrated = useSyncExternalStore(
     (subscribe) => {
@@ -60,8 +61,32 @@ export default function Header() {
     }
   }, [user?.token, loadFavoritesFromServer]);
 
+  useEffect(() => {
+    const headerElement = headerRef.current;
+    if (!headerElement || typeof window === "undefined") return;
+
+    const updateHeaderHeight = () => {
+      const height = headerElement.getBoundingClientRect().height;
+      document.documentElement.style.setProperty(
+        "--site-header-height",
+        `${Math.round(height)}px`,
+      );
+    };
+
+    updateHeaderHeight();
+
+    const observer = new ResizeObserver(() => updateHeaderHeight());
+    observer.observe(headerElement);
+    window.addEventListener("resize", updateHeaderHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateHeaderHeight);
+    };
+  }, []);
+
   return (
-    <header className="w-full sticky top-0 z-50 bg-white">
+    <header ref={headerRef} className="fixed inset-x-0 top-0 z-50 bg-white">
       <div className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-6">
           <Link href="/" className="text-2xl font-bold tracking-tight shrink-0">

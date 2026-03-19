@@ -39,6 +39,9 @@ export interface IProduct extends Document {
   description: string;
   descriptionUk: string;
   descriptionEn: string;
+  longDescription: string;
+  longDescriptionUk: string;
+  longDescriptionEn: string;
   reviews: IReview[];
   rating: number;
   numReviews: number;

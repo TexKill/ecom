@@ -46,6 +46,9 @@ export const createProductSchema = z.object({
   description: z.string().trim().min(2).max(5000),
   descriptionUk: z.string().trim().max(5000).optional(),
   descriptionEn: z.string().trim().max(5000).optional(),
+  longDescription: z.string().trim().max(10000).optional(),
+  longDescriptionUk: z.string().trim().max(10000).optional(),
+  longDescriptionEn: z.string().trim().max(10000).optional(),
   image: z.string().trim().min(1),
   images: productImagesSchema,
   brand: z.string().trim().min(1).max(150),
@@ -60,6 +63,9 @@ export const updateProductSchema = z
     description: z.string().trim().min(2).max(5000).optional(),
     descriptionUk: z.string().trim().max(5000).optional(),
     descriptionEn: z.string().trim().max(5000).optional(),
+    longDescription: z.string().trim().max(10000).optional(),
+    longDescriptionUk: z.string().trim().max(10000).optional(),
+    longDescriptionEn: z.string().trim().max(10000).optional(),
     image: z.string().trim().min(1).optional(),
     images: productImagesSchema.optional(),
     brand: z.string().trim().min(1).max(150).optional(),
@@ -73,6 +79,9 @@ export const updateProductSchema = z
       data.description !== undefined ||
       data.descriptionUk !== undefined ||
       data.descriptionEn !== undefined ||
+      data.longDescription !== undefined ||
+      data.longDescriptionUk !== undefined ||
+      data.longDescriptionEn !== undefined ||
       data.image !== undefined ||
       data.images !== undefined ||
       data.brand !== undefined ||

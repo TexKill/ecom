@@ -305,13 +305,12 @@ export default function AdminPage() {
   const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const fallbackDescription = (
+    const fallbackShortDescription = (
       form.descriptionEn ||
       form.descriptionUk ||
       form.description
     ).trim();
-
-    if (!fallbackDescription) {
+    if (!fallbackShortDescription) {
       showToast(t.admin.saveFail, "error");
       return;
     }
@@ -329,9 +328,9 @@ export default function AdminPage() {
         ...form,
         image: form.images[0] || form.image,
         images: form.images,
-        description: fallbackDescription,
-        descriptionUk: form.descriptionUk?.trim() || fallbackDescription,
-        descriptionEn: form.descriptionEn?.trim() || fallbackDescription,
+        description: fallbackShortDescription,
+        descriptionUk: form.descriptionUk?.trim() || fallbackShortDescription,
+        descriptionEn: form.descriptionEn?.trim() || fallbackShortDescription,
       };
 
       if (editingId) {
@@ -838,7 +837,7 @@ export default function AdminPage() {
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-gray-600">
-                      {t.admin.descriptionUk}
+                      {lang === "uk" ? "Короткий опис (UA)" : "Short Description (UA)"}
                     </span>
                     <textarea
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
@@ -856,7 +855,7 @@ export default function AdminPage() {
 
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-gray-600">
-                      {t.admin.descriptionEn}
+                      {lang === "uk" ? "Короткий опис (EN)" : "Short Description (EN)"}
                     </span>
                     <textarea
                       className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
@@ -871,6 +870,7 @@ export default function AdminPage() {
                       required
                     />
                   </label>
+
                 </div>
                 <div className="mt-4 flex gap-2">
                   <button

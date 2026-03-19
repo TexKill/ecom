@@ -192,7 +192,7 @@ export default function CartPage() {
             <div className="mb-6 border-t border-gray-200 pt-4">
               <div className="flex items-center justify-between text-lg font-bold">
                 <span>{t.cart.total}</span>
-                <span className="text-red-500">{UAH}{totalPrice().toFixed(2)}</span>
+                <span className="text-gray-900">{UAH}{totalPrice().toFixed(2)}</span>
               </div>
             </div>
 
