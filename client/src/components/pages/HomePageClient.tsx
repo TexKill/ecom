@@ -75,8 +75,6 @@ export default function HomePageClient({
             {t.home.shopNow} -&gt;
           </Link>
         </div>
-
-        <div className="hidden md:flex text-8xl">ðŸ›ï¸</div>
       </section>
 
       <section className="mb-8" id="products">
@@ -130,7 +128,6 @@ export default function HomePageClient({
 
         {!loading && !error && products.length === 0 && (
           <div className="text-center py-20 text-gray-400">
-            <p className="text-5xl mb-4">ðŸ”</p>
             <p>
               {t.home.noProductsFound}
               {keyword ? `: "${keyword}"` : ""}
@@ -160,3 +157,4 @@ export default function HomePageClient({
     </div>
   );
 }
+
