@@ -4,8 +4,6 @@ Full-stack e-commerce app with separate `api` and `client` services.
 
 [![CI](https://github.com/TexKill/ecom/actions/workflows/ci.yml/badge.svg)](https://github.com/TexKill/ecom/actions/workflows/ci.yml)
 [![CD Production](https://github.com/TexKill/ecom/actions/workflows/cd-production.yml/badge.svg)](https://github.com/TexKill/ecom/actions/workflows/cd-production.yml)
-[![Docker API](https://img.shields.io/badge/image-ghcr.io%2FTexKill%2Fecom--api-blue)](https://github.com/TexKill/ecom/pkgs/container/ecom-api)
-[![Docker Client](https://img.shields.io/badge/image-ghcr.io%2FTexKill%2Fecom--client-blue)](https://github.com/TexKill/ecom/pkgs/container/ecom-client)
 
 - `api`: Express 5 + TypeScript
 - `client`: Next.js 16 App Router + React 19
