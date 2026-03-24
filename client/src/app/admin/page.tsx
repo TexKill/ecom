@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -80,35 +81,18 @@ function AdminPageContent() {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const hasHydrated = useAuthStore((s) => s.hasHydrated);
 
   const [tab, setTab] = useState<AdminTab>("products");
-  const [products, setProducts] = useState<IProduct[]>([]);
-  const [orders, setOrders] = useState<IOrder[]>([]);
-  const [paymentLogs, setPaymentLogs] = useState<IPaymentLog[]>([]);
-  const [promoCodes, setPromoCodes] = useState<IPromoCode[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [stats, setStats] = useState<{
-    totalOrders: number;
-    paidOrders: number;
-    unpaidOrders: number;
-    deliveredOrders: number;
-    pendingOrders: number;
-    totalRevenue: number;
-    paidRevenue: number;
-    averageOrderValue: number;
-  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [restocking, setRestocking] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [orderPage, setOrderPage] = useState(1);
-  const [orderTotalPages, setOrderTotalPages] = useState(1);
   const [paymentPage, setPaymentPage] = useState(1);
-  const [paymentTotalPages, setPaymentTotalPages] = useState(1);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [paymentDateFrom, setPaymentDateFrom] = useState("");
   const [paymentDateTo, setPaymentDateTo] = useState("");
@@ -135,6 +119,7 @@ function AdminPageContent() {
   const isEditing = useMemo(() => Boolean(editingId), [editingId]);
 
   const loadFailMsg = t.admin.loadFail;
+  const canAccessAdmin = hasHydrated && Boolean(user?.isAdmin);
 
   const getPromoAdminErrorMessage = (rawMessage?: string) => {
     if (!rawMessage) return t.admin.actionFailed;
@@ -155,63 +140,80 @@ function AdminPageContent() {
       router.replace("/");
       return;
     }
+  }, [hasHydrated, user, router]);
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError("");
+  const statsQuery = useQuery({
+    queryKey: ["admin", "stats"],
+    queryFn: getAdminOrderStats,
+    enabled: canAccessAdmin,
+    staleTime: 60 * 1000,
+  });
 
-        if (tab === "products") {
-          const productsRes = await getProducts("", page, 15);
-          setProducts(productsRes.products);
-          setTotalPages(productsRes.pages);
-        }
+  const productsQuery = useQuery({
+    queryKey: ["admin", "products", page],
+    queryFn: () => getProducts("", page, 15),
+    enabled: canAccessAdmin && tab === "products",
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-        if (tab === "orders") {
-          const ordersRes = await getAllOrders(orderPage);
-          setOrders(ordersRes.orders);
-          setOrderTotalPages(ordersRes.pages);
-        }
+  const ordersQuery = useQuery({
+    queryKey: ["admin", "orders", orderPage],
+    queryFn: () => getAllOrders(orderPage),
+    enabled: canAccessAdmin && tab === "orders",
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-        if (tab === "payments") {
-          const logsRes = await getPaymentLogs({
-            page: paymentPage,
-            status: paymentStatusFilter || undefined,
-            dateFrom: paymentDateFrom || undefined,
-            dateTo: paymentDateTo || undefined,
-          });
-          setPaymentLogs(logsRes.logs);
-          setPaymentTotalPages(logsRes.pages);
-        }
+  const paymentsQuery = useQuery({
+    queryKey: [
+      "admin",
+      "payments",
+      paymentPage,
+      paymentStatusFilter,
+      paymentDateFrom,
+      paymentDateTo,
+    ],
+    queryFn: () =>
+      getPaymentLogs({
+        page: paymentPage,
+        status: paymentStatusFilter || undefined,
+        dateFrom: paymentDateFrom || undefined,
+        dateTo: paymentDateTo || undefined,
+      }),
+    enabled: canAccessAdmin && tab === "payments",
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-        if (tab === "promos") {
-          const promoCodesRes = await getPromoCodes();
-          setPromoCodes(promoCodesRes);
-        }
+  const promosQuery = useQuery({
+    queryKey: ["admin", "promos"],
+    queryFn: getPromoCodes,
+    enabled: canAccessAdmin && tab === "promos",
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-        const statsRes = await getAdminOrderStats();
-        setStats(statsRes);
-      } catch {
-        setError(loadFailMsg);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [
-    hasHydrated,
-    user,
-    router,
-    tab,
-    page,
-    orderPage,
-    paymentPage,
-    paymentStatusFilter,
-    paymentDateFrom,
-    paymentDateTo,
-    loadFailMsg,
-  ]);
+  const products: IProduct[] = productsQuery.data?.products || [];
+  const totalPages = productsQuery.data?.pages || 1;
+  const orders: IOrder[] = ordersQuery.data?.orders || [];
+  const orderTotalPages = ordersQuery.data?.pages || 1;
+  const paymentLogs: IPaymentLog[] = paymentsQuery.data?.logs || [];
+  const paymentTotalPages = paymentsQuery.data?.pages || 1;
+  const promoCodes = promosQuery.data || [];
+  const stats = statsQuery.data || null;
+  const loading =
+    (tab === "products" && productsQuery.isLoading) ||
+    (tab === "orders" && ordersQuery.isLoading) ||
+    (tab === "payments" && paymentsQuery.isLoading) ||
+    (tab === "promos" && promosQuery.isLoading);
+  const queryError =
+    (tab === "products" && productsQuery.isError) ||
+    (tab === "orders" && ordersQuery.isError) ||
+    (tab === "payments" && paymentsQuery.isError) ||
+    (tab === "promos" && promosQuery.isError)
+      ? loadFailMsg
+      : "";
 
   useEffect(() => {
     setPaymentPage(1);
@@ -334,14 +336,12 @@ function AdminPageContent() {
       };
 
       if (editingId) {
-        const updated = await updateProduct(editingId, payload);
-        setProducts((prev) =>
-          prev.map((p) => (p._id === editingId ? updated : p)),
-        );
+        await updateProduct(editingId, payload);
+        await queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
         showToast(t.admin.productUpdated, "success");
       } else {
-        const created = await createProduct(payload);
-        setProducts((prev) => [created, ...prev]);
+        await createProduct(payload);
+        await queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
         showToast(t.admin.productCreated, "success");
       }
       resetForm();
@@ -426,7 +426,7 @@ function AdminPageContent() {
       danger: true,
       onConfirm: async () => {
         await deleteProduct(id);
-        setProducts((prev) => prev.filter((p) => p._id !== id));
+        await queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
         if (editingId === id) resetForm();
         showToast(t.admin.productDeleted, "success");
       },
@@ -441,7 +441,11 @@ function AdminPageContent() {
       danger: true,
       onConfirm: async () => {
         await deleteOrder(id);
-        setOrders((prev) => prev.filter((o) => o._id !== id));
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+          queryClient.invalidateQueries({ queryKey: ["admin", "payments"] }),
+          queryClient.invalidateQueries({ queryKey: ["admin", "stats"] }),
+        ]);
         showToast(t.admin.orderDeleted, "success");
       },
     });
@@ -463,14 +467,12 @@ function AdminPageContent() {
       };
 
       if (promoEditingId) {
-        const updated = await updatePromoCode(promoEditingId, payload);
-        setPromoCodes((prev) =>
-          prev.map((promo) => (promo._id === promoEditingId ? updated : promo)),
-        );
+        await updatePromoCode(promoEditingId, payload);
+        await queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
         showToast(t.admin.promoUpdated, "success");
       } else {
-        const created = await createPromoCode(payload);
-        setPromoCodes((prev) => [created, ...prev]);
+        await createPromoCode(payload);
+        await queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
         showToast(t.admin.promoCreated, "success");
       }
 
@@ -504,7 +506,7 @@ function AdminPageContent() {
       danger: true,
       onConfirm: async () => {
         await deletePromoCode(id);
-        setPromoCodes((prev) => prev.filter((promo) => promo._id !== id));
+        await queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
         if (promoEditingId === id) resetPromoForm();
         showToast(t.admin.promoDeleted, "success");
       },
@@ -520,8 +522,12 @@ function AdminPageContent() {
       onConfirm: async () => {
         setStatusUpdatingId(id);
         try {
-          const updated = await updateOrderStatus(id, status);
-          setOrders((prev) => prev.map((o) => (o._id === id ? updated : o)));
+          await updateOrderStatus(id, status);
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["admin", "orders"] }),
+            queryClient.invalidateQueries({ queryKey: ["admin", "payments"] }),
+            queryClient.invalidateQueries({ queryKey: ["admin", "stats"] }),
+          ]);
           showToast(t.admin.orderStatusUpdated, "success");
         } finally {
           setStatusUpdatingId(null);
@@ -539,9 +545,7 @@ function AdminPageContent() {
         setRestocking(true);
         try {
           await restockProductsRandom();
-          const productsRes = await getProducts("", page, 15);
-          setProducts(productsRes.products);
-          setTotalPages(productsRes.pages);
+          await queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
           showToast(t.admin.productsRestocked, "success");
         } finally {
           setRestocking(false);
@@ -604,9 +608,9 @@ function AdminPageContent() {
         </div>
       </div>
 
-      {error && (
+      {(error || queryError) && (
         <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
-          {error}
+          {error || queryError}
         </div>
       )}
       {toast && (
