@@ -1,8 +1,12 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-
 "use client";
 
-import { createContext, useContext, useMemo, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { Lang, messages, Messages } from "./messages";
 
 type LanguageContextValue = {
@@ -12,24 +16,56 @@ type LanguageContextValue = {
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const LANG_STORAGE_KEY = "lang";
+const languageListeners = new Set<() => void>();
+
+const getStoredLang = (): Lang => {
+  if (typeof window === "undefined") return "en";
+  const saved = window.localStorage.getItem(LANG_STORAGE_KEY);
+  return saved === "uk" || saved === "en" ? saved : "en";
+};
+
+const subscribeToLanguage = (listener: () => void) => {
+  languageListeners.add(listener);
+
+  if (typeof window === "undefined") {
+    return () => {
+      languageListeners.delete(listener);
+    };
+  }
+
+  const handleStorage = (event: StorageEvent) => {
+    if (!event.key || event.key === LANG_STORAGE_KEY) {
+      listener();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    languageListeners.delete(listener);
+    window.removeEventListener("storage", handleStorage);
+  };
+};
+
+const emitLanguageChange = () => {
+  languageListeners.forEach((listener) => listener());
+};
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window === "undefined") return "en";
-    const saved = localStorage.getItem("lang");
-    return saved === "uk" || saved === "en" ? saved : "en";
-  });
+  const lang = useSyncExternalStore<Lang>(
+    subscribeToLanguage,
+    getStoredLang,
+    () => "en",
+  );
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = (next: Lang) => {
-    setLangState(next);
-    localStorage.setItem("lang", next);
-    document.documentElement.lang = next;
+    window.localStorage.setItem(LANG_STORAGE_KEY, next);
+    emitLanguageChange();
   };
 
   const value = useMemo(
@@ -40,8 +76,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }),
     [lang],
   );
-
-  if (!mounted) return null;
 
   return (
     <LanguageContext.Provider value={value}>

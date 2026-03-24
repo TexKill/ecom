@@ -76,11 +76,11 @@ export default function ProductPage() {
   const [reviewError, setReviewError] = useState("");
   const [reviewDeletingId, setReviewDeletingId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState("");
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchEndX, setTouchEndX] = useState<number | null>(null);
   const [activeSectionId, setActiveSectionId] = useState("about-product");
   const [showStickySummary, setShowStickySummary] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -102,8 +102,8 @@ export default function ProductPage() {
   } = useQuery({
     queryKey: ["product", id],
     queryFn: () => fetchProduct(id),
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const { data: similarProductsData } = useQuery({
@@ -173,6 +173,7 @@ export default function ProductPage() {
       return { products: scoredProducts.slice(0, 4) };
     },
     enabled: Boolean(product),
+    staleTime: 5 * 60 * 1000,
   });
 
   const hasUserReviewed = useMemo(() => {
@@ -188,8 +189,6 @@ export default function ProductPage() {
     return (product.descriptionEn || product.description || "").trim();
   }, [product, lang]);
 
-  const localizedLongDescription = localizedDescription;
-
   const productImages = useMemo(() => {
     if (!product) return [];
     if (product.images?.length) {
@@ -203,64 +202,6 @@ export default function ProductPage() {
   }, [productImages]);
 
   const similarProducts = similarProductsData?.products || [];
-  const characteristicsRows = useMemo(() => {
-    if (!product) return [];
-
-    return [
-      {
-        label: lang === "uk" ? "Бренд" : "Brand",
-        values: [product.brand],
-      },
-      {
-        label: lang === "uk" ? "Категорія" : "Category",
-        values: [product.category],
-      },
-      {
-        label: lang === "uk" ? "Ціна" : "Price",
-        values: [`\u20B4${product.price.toFixed(2)}`],
-      },
-      {
-        label: lang === "uk" ? "Наявність" : "Availability",
-        values: [
-          product.countInStock > 0
-            ? `${t.product.inStock} (${product.countInStock})`
-            : t.product.outOfStock,
-        ],
-      },
-      {
-        label: lang === "uk" ? "Рейтинг" : "Rating",
-        values: [`${product.rating.toFixed(1)} / 5`],
-      },
-      {
-        label: lang === "uk" ? "Відгуки" : "Reviews",
-        values: [String(product.numReviews)],
-      },
-    ];
-  }, [product, t.product]);
-  const productSections = useMemo(
-    () => [
-      {
-        id: "about-product",
-        label: lang === "uk" ? "Про товар" : "About Product",
-      },
-      {
-        id: "characteristics",
-        label: lang === "uk" ? "Характеристики" : "Characteristics",
-      },
-      {
-        id: "reviews",
-        label: lang === "uk" ? "Відгуки та питання" : "Reviews & Questions",
-        count: product?.numReviews ?? 0,
-      },
-      {
-        id: "buy-together",
-        label: lang === "uk" ? "Купують разом" : "Buy Together",
-        count: similarProducts.length,
-      },
-    ],
-    [product?.numReviews, similarProducts.length, t.product],
-  );
-
   const characteristicsRowsI18n = useMemo(() => {
     if (!product) return [];
 
@@ -320,18 +261,18 @@ export default function ProductPage() {
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    setTouchEndX(null);
-    setTouchStartX(event.targetTouches[0]?.clientX ?? null);
+    touchEndXRef.current = null;
+    touchStartXRef.current = event.targetTouches[0]?.clientX ?? null;
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    setTouchEndX(event.targetTouches[0]?.clientX ?? null);
+    touchEndXRef.current = event.targetTouches[0]?.clientX ?? null;
   };
 
   const handleTouchEnd = () => {
-    if (touchStartX == null || touchEndX == null) return;
+    if (touchStartXRef.current == null || touchEndXRef.current == null) return;
 
-    const swipeDistance = touchStartX - touchEndX;
+    const swipeDistance = touchStartXRef.current - touchEndXRef.current;
     if (Math.abs(swipeDistance) < 50) return;
 
     if (swipeDistance > 0) {
@@ -741,7 +682,7 @@ export default function ProductPage() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{product.name}</h2>
             <p className="mt-4 whitespace-pre-line leading-8 text-gray-700">
-              {localizedLongDescription}
+              {localizedDescription}
             </p>
           </div>
           <div className="rounded-2xl bg-gray-50 p-5">
@@ -976,3 +917,5 @@ export default function ProductPage() {
     </div>
   );
 }
+
+

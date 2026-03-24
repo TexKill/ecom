@@ -8,7 +8,7 @@
     "start": "npx ts-node src/index.ts",
     "build": "tsc",
     "prod": "node dist/index.js",
-    "test": "node -r ts-node/register --test src/**/*.test.ts",
+    "test": "node scripts/run-tests.cjs",
     "restock": "ts-node src/scripts/restockProducts.ts",
     "prisma:generate": "prisma generate"
   },

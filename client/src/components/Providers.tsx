@@ -1,8 +1,16 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
+
+const ReactQueryDevtools =
+  process.env.NODE_ENV === "development"
+    ? dynamic(() =>
+        import("@tanstack/react-query-devtools").then((mod) => mod.ReactQueryDevtools),
+      )
+    : () => null;
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   //  Use useState to create the QueryClient only once when the component mounts,
@@ -21,7 +29,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>{children}</LanguageProvider>
+      <LanguageProvider>
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

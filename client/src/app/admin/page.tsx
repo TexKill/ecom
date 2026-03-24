@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -76,7 +76,7 @@ const isAdminTab = (value: string): value is AdminTab =>
   value === "payments" ||
   value === "promos";
 
-export default function AdminPage() {
+function AdminPageContent() {
   const { t, lang } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1330,5 +1330,13 @@ export default function AdminPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminPageContent />
+    </Suspense>
   );
 }

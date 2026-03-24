@@ -1,8 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts, ProductQueryParams } from "@/lib/api/products";
+import {
+  fetchProducts,
+  ProductQueryParams,
+  ProductsResponse,
+} from "@/lib/api/products";
 import { useProductFilters } from "@/store/useProductFilters";
 
-export const useProducts = (keywordFromUrl: string = "") => {
+export const useProducts = (
+  keywordFromUrl: string = "",
+  initialData?: ProductsResponse,
+) => {
   const filters = useProductFilters();
 
   const params: ProductQueryParams = {
@@ -19,6 +26,17 @@ export const useProducts = (keywordFromUrl: string = "") => {
   return useQuery({
     queryKey: ["products", params],
     queryFn: () => fetchProducts(params),
+    initialData:
+      initialData &&
+      params.keyword === keywordFromUrl &&
+      params.pageNumber === initialData.page &&
+      params.sort === "newest" &&
+      !params.category &&
+      !params.brand &&
+      params.minPrice === undefined &&
+      params.maxPrice === undefined
+        ? initialData
+        : undefined,
     placeholderData: (prev) => prev,
   });
 };
