@@ -70,7 +70,12 @@ export const getProducts = async (
 };
 
 export const getProductById = async (id: string) => {
-  const { data } = await axiosInstance.get<IProduct>(`/api/products/${id}`);
+  const { data } = await axiosInstance.get<IProduct>(`/api/products/${id}`, {
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  });
   return data;
 };
 

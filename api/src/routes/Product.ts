@@ -219,15 +219,6 @@ productRoute.get(
   validateParams(productIdParamSchema),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const productId = String(req.params.id);
-    const detailsCacheKey = buildProductDetailsCacheKey(productId);
-    const cachedProduct = await getCachedJson<unknown>(detailsCacheKey);
-
-    if (cachedProduct) {
-      res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
-      res.json(cachedProduct);
-      return;
-    }
-
     const product = await Product.findById(productId).lean();
 
     if (!product) {
@@ -235,8 +226,7 @@ productRoute.get(
       throw new Error("Product not found");
     }
 
-    await setCachedJson(detailsCacheKey, product);
-    res.set("Cache-Control", PRODUCTS_PUBLIC_CACHE_CONTROL);
+    res.set("Cache-Control", "no-store");
     res.json(product);
   }),
 );

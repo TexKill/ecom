@@ -19,7 +19,7 @@ import {
 import { useCartStore } from "@/store/cartStore";
 import { useAuthStore } from "@/store/authStore";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { IProduct } from "@/types";
+import { IProduct, IReview } from "@/types";
 import ProductCard from "@/components/products/ProductCard";
 import {
   createProductReview,
@@ -57,6 +57,16 @@ const tokenizeProductName = (value: string) =>
     .split(/[^a-z0-9]+/i)
     .map((token) => token.trim())
     .filter((token) => token.length >= 2 && !SIMILAR_STOP_WORDS.has(token));
+
+const buildProductWithReviews = (product: IProduct, reviews: IReview[]): IProduct => ({
+  ...product,
+  reviews,
+  numReviews: reviews.length,
+  rating:
+    reviews.length === 0
+      ? 0
+      : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length,
+});
 
 export default function ProductPage() {
   const { t, lang } = useLanguage();
@@ -347,13 +357,31 @@ export default function ProductPage() {
     try {
       setReviewSubmitting(true);
       setReviewError("");
+      const pendingReview: IReview = {
+        _id: `temp-${Date.now()}`,
+        name: user.name,
+        rating: reviewRating,
+        comment: reviewComment,
+        user: user._id,
+        createdAt: new Date().toISOString(),
+      };
+
       await createProductReview(product._id, {
         rating: reviewRating,
         comment: reviewComment,
       });
+
+      queryClient.setQueryData<IProduct>(["product", id], (currentProduct) => {
+        if (!currentProduct) return currentProduct;
+        return buildProductWithReviews(currentProduct, [
+          ...currentProduct.reviews,
+          pendingReview,
+        ]);
+      });
+
       setReviewComment("");
       setReviewRating(5);
-      await queryClient.invalidateQueries({ queryKey: ["product", id] });
+      void queryClient.invalidateQueries({ queryKey: ["product", id] });
       showToast(t.product.submitSuccess);
     } catch (error) {
       const message = axios.isAxiosError<{ message?: string }>(error)
@@ -362,7 +390,7 @@ export default function ProductPage() {
 
       if (typeof message === "string" && message.toLowerCase().includes("already reviewed")) {
         setReviewError(t.product.alreadyReviewed);
-        await queryClient.invalidateQueries({ queryKey: ["product", id] });
+        void queryClient.invalidateQueries({ queryKey: ["product", id] });
       } else {
         setReviewError(message || t.product.submitFail);
       }
@@ -377,7 +405,16 @@ export default function ProductPage() {
       setReviewDeletingId(reviewId);
       setReviewError("");
       await deleteProductReview(product._id, reviewId);
-      await queryClient.invalidateQueries({ queryKey: ["product", id] });
+
+      queryClient.setQueryData<IProduct>(["product", id], (currentProduct) => {
+        if (!currentProduct) return currentProduct;
+        return buildProductWithReviews(
+          currentProduct,
+          currentProduct.reviews.filter((review) => review._id !== reviewId),
+        );
+      });
+
+      void queryClient.invalidateQueries({ queryKey: ["product", id] });
       showToast(t.product.removeSuccess);
     } catch {
       setReviewError(t.product.removeFail);

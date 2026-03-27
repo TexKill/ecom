@@ -52,12 +52,17 @@ export const deleteCacheByPattern = async (pattern: string) => {
   try {
     let deleted = 0;
 
-    for await (const key of client.scanIterator({
+    for await (const keyGroup of client.scanIterator({
       MATCH: pattern,
       COUNT: 100,
     })) {
-      await client.del(key);
-      deleted++;
+      const keys = Array.isArray(keyGroup) ? keyGroup : [keyGroup];
+      if (keys.length === 0) {
+        continue;
+      }
+
+      await client.del(keys);
+      deleted += keys.length;
     }
 
     return deleted;
