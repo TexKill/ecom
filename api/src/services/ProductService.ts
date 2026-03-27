@@ -116,6 +116,14 @@ export const restockRandomProducts = async () => {
   return updatedCount;
 };
 
+const getNormalizedReviews = (product: { reviews?: any[] | null }) => {
+  if (!Array.isArray(product.reviews)) {
+    product.reviews = [];
+  }
+
+  return product.reviews;
+};
+
 export const addProductReview = async (args: {
   productId: string;
   userId: string;
@@ -124,51 +132,71 @@ export const addProductReview = async (args: {
   comment: string;
 }) => {
   const { productId, userId, userName, rating, comment } = args;
-  const product = await Product.findById(productId);
+  const product = await Product.findById(productId).lean();
   if (!product) {
     throw httpError(404, "Product not found");
   }
 
-  const alreadyReviewed = product.reviews.find((r: { user: string }) => r.user.toString() === userId);
+  const reviews = getNormalizedReviews(product);
+  const alreadyReviewed = reviews.find((r: { user: string }) => r.user.toString() === userId);
   if (alreadyReviewed) {
     throw httpError(400, "Product already reviewed");
   }
 
-  product.reviews.push({
-    name: userName,
+  reviews.push({
+    name: userName.trim() || "Anonymous",
     rating: Number(rating),
     comment,
     user: userId as any,
   } as any);
 
-  product.numReviews = product.reviews.length;
-  product.rating =
-    product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
-    product.reviews.length;
+  const numReviews = reviews.length;
+  const averageRating =
+    reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
+    reviews.length;
 
-  await product.save();
+  await Product.updateOne(
+    { _id: productId },
+    {
+      $set: {
+        reviews,
+        numReviews,
+        rating: averageRating,
+      },
+    },
+  );
   await invalidateProductCaches(productId);
 };
 
 export const removeProductReview = async (productId: string, reviewId: string) => {
-  const product = await Product.findById(productId);
+  const product = await Product.findById(productId).lean();
   if (!product) {
     throw httpError(404, "Product not found");
   }
 
-  const reviewIndex = product.reviews.findIndex((review: any) => review._id.toString() === reviewId);
+  const reviews = getNormalizedReviews(product);
+  const reviewIndex = reviews.findIndex((review: any) => review._id.toString() === reviewId);
   if (reviewIndex < 0) {
     throw httpError(404, "Review not found");
   }
 
-  product.reviews.splice(reviewIndex, 1);
-  product.numReviews = product.reviews.length;
-  product.rating =
-    product.reviews.length === 0
+  reviews.splice(reviewIndex, 1);
+  const numReviews = reviews.length;
+  const averageRating =
+    reviews.length === 0
       ? 0
-      : product.reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
-        product.reviews.length;
+      : reviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) /
+        reviews.length;
 
-  await product.save();
+  await Product.updateOne(
+    { _id: productId },
+    {
+      $set: {
+        reviews,
+        numReviews,
+        rating: averageRating,
+      },
+    },
+  );
   await invalidateProductCaches(productId);
 };

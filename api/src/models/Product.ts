@@ -33,7 +33,7 @@ const productSchema = new Schema<IProduct>(
     longDescription: { type: String, required: true, default: "" },
     longDescriptionUk: { type: String, required: true, default: "" },
     longDescriptionEn: { type: String, required: true, default: "" },
-    reviews: [reviewSchema],
+    reviews: { type: [reviewSchema], default: [] },
     rating: { type: Number, required: true, default: 0 },
     numReviews: { type: Number, required: true, default: 0 },
     price: { type: Number, required: true, default: 0 },

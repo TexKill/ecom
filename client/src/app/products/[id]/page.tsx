@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -354,8 +355,17 @@ export default function ProductPage() {
       setReviewRating(5);
       await queryClient.invalidateQueries({ queryKey: ["product", id] });
       showToast(t.product.submitSuccess);
-    } catch {
-      setReviewError(t.product.submitFail);
+    } catch (error) {
+      const message = axios.isAxiosError<{ message?: string }>(error)
+        ? error.response?.data?.message
+        : "";
+
+      if (typeof message === "string" && message.toLowerCase().includes("already reviewed")) {
+        setReviewError(t.product.alreadyReviewed);
+        await queryClient.invalidateQueries({ queryKey: ["product", id] });
+      } else {
+        setReviewError(message || t.product.submitFail);
+      }
     } finally {
       setReviewSubmitting(false);
     }
