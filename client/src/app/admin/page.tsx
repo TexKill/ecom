@@ -151,7 +151,7 @@ function AdminPageContent() {
 
   const productsQuery = useQuery({
     queryKey: ["admin", "products", page],
-    queryFn: () => getProducts("", page, 15),
+    queryFn: () => getProducts("", page, 15, undefined, { noCache: true }),
     enabled: canAccessAdmin && tab === "products",
     staleTime: 60 * 1000,
     placeholderData: (prev) => prev,
@@ -544,9 +544,21 @@ function AdminPageContent() {
       onConfirm: async () => {
         setRestocking(true);
         try {
-          await restockProductsRandom();
-          await queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
-          showToast(t.admin.productsRestocked, "success");
+          const result = await restockProductsRandom();
+          await queryClient.resetQueries({ queryKey: ["admin", "products"] });
+          await queryClient.refetchQueries({
+            queryKey: ["admin", "products"],
+            type: "active",
+          });
+          showToast(
+            result?.updatedCount
+              ? `${t.admin.productsRestocked}: ${result.updatedCount}`
+              : t.admin.productsRestocked,
+            "success",
+          );
+        } catch {
+          showToast(t.admin.actionFailed, "error");
+          throw new Error("Restock failed");
         } finally {
           setRestocking(false);
         }

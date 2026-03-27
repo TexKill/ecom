@@ -46,6 +46,9 @@ export const getProducts = async (
     maxPrice?: number;
     sort?: string;
   },
+  options?: {
+    noCache?: boolean;
+  },
 ) => {
   // Using URLSearchParams for clean query construction
   const params = new URLSearchParams({
@@ -63,9 +66,14 @@ export const getProducts = async (
     params.set("maxPrice", String(filters.maxPrice));
   if (filters?.sort) params.set("sort", filters.sort);
 
-  const { data } = await axiosInstance.get(
-    `/api/products?${params.toString()}`,
-  );
+  const { data } = await axiosInstance.get(`/api/products?${params.toString()}`, {
+    headers: options?.noCache
+      ? {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        }
+      : undefined,
+  });
   return data;
 };
 
