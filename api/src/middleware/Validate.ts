@@ -11,7 +11,9 @@ const validator =
       next();
     } catch (error) {
       if (error instanceof ZodError) return next(error);
-      const validationError = new Error(`Invalid request ${source}`) as Error & {
+      const validationError = new Error(
+        `Invalid request ${source}`,
+      ) as Error & {
         statusCode?: number;
       };
       validationError.statusCode = 400;
@@ -19,7 +21,9 @@ const validator =
     }
   };
 
-export const validateBody = <T>(schema: ZodType<T>) => validator(schema, "body");
+export const validateBody = <T>(schema: ZodType<T>) =>
+  validator(schema, "body");
 export const validateParams = <T>(schema: ZodType<T>) =>
   validator(schema, "params");
-export const validateQuery = <T>(schema: ZodType<T>) => validator(schema, "query");
+export const validateQuery = <T>(schema: ZodType<T>) =>
+  validator(schema, "query");

@@ -9,11 +9,15 @@ const rawEnv = {
 };
 
 const booleanFromEnv = (defaultValue: "true" | "false" = "false") =>
-  z.preprocess((value) => {
-    if (value === undefined || value === null || value === "") return defaultValue;
-    if (typeof value === "string") return value.toLowerCase();
-    return value;
-  }, z.enum(["true", "false"]).transform((value) => value === "true"));
+  z.preprocess(
+    (value) => {
+      if (value === undefined || value === null || value === "")
+        return defaultValue;
+      if (typeof value === "string") return value.toLowerCase();
+      return value;
+    },
+    z.enum(["true", "false"]).transform((value) => value === "true"),
+  );
 
 const optionalTrimmedString = z.preprocess((value) => {
   if (typeof value !== "string") return value;
@@ -23,7 +27,9 @@ const optionalTrimmedString = z.preprocess((value) => {
 
 const envSchema = z
   .object({
-    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
     PORT: z.coerce.number().int().min(1).max(65535).default(9000),
     MONGODB_URL: z.string().trim().min(1, "MONGODB_URL is required"),
@@ -32,9 +38,18 @@ const envSchema = z
     CORS_ORIGIN: z.string().default("http://localhost:3000"),
     ENABLE_SEED_ROUTES: booleanFromEnv("false"),
     SEED_KEY: z.string().trim().default("change_me"),
-    CLOUDINARY_CLOUD_NAME: z.string().trim().min(1, "CLOUDINARY_CLOUD_NAME is required"),
-    CLOUDINARY_API_KEY: z.string().trim().min(1, "CLOUDINARY_API_KEY is required"),
-    CLOUDINARY_API_SECRET: z.string().trim().min(1, "CLOUDINARY_API_SECRET is required"),
+    CLOUDINARY_CLOUD_NAME: z
+      .string()
+      .trim()
+      .min(1, "CLOUDINARY_CLOUD_NAME is required"),
+    CLOUDINARY_API_KEY: z
+      .string()
+      .trim()
+      .min(1, "CLOUDINARY_API_KEY is required"),
+    CLOUDINARY_API_SECRET: z
+      .string()
+      .trim()
+      .min(1, "CLOUDINARY_API_SECRET is required"),
     LIQPAY_PUBLIC_KEY: optionalTrimmedString,
     LIQPAY_PRIVATE_KEY: optionalTrimmedString,
     LIQPAY_SANDBOX: booleanFromEnv("false"),
@@ -42,12 +57,28 @@ const envSchema = z
     CLIENT_URL: z.string().url().default("http://localhost:3000"),
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
     RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(120),
-    AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
+    AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
+      .number()
+      .int()
+      .min(1000)
+      .default(60_000),
     AUTH_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(10),
-    UPLOAD_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
+    UPLOAD_RATE_LIMIT_WINDOW_MS: z.coerce
+      .number()
+      .int()
+      .min(1000)
+      .default(60_000),
     UPLOAD_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(20),
-    LIQPAY_CALLBACK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
-    LIQPAY_CALLBACK_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().min(1).default(120),
+    LIQPAY_CALLBACK_RATE_LIMIT_WINDOW_MS: z.coerce
+      .number()
+      .int()
+      .min(1000)
+      .default(60_000),
+    LIQPAY_CALLBACK_RATE_LIMIT_MAX_REQUESTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(120),
     REDIS_URL: optionalTrimmedString,
     REDIS_KEY_PREFIX: z.string().trim().default("ecom"),
     CACHE_TTL_SECONDS: z.coerce.number().int().min(1).default(60),
