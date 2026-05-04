@@ -6,7 +6,6 @@ import type {
   PaymentLog,
   PromoCode,
   Subscriber,
-  User,
 } from "@prisma/client";
 import type {
   ICartItem,
@@ -24,10 +23,15 @@ type JsonObject = Record<string, unknown>;
 const asObject = (value: unknown): JsonObject | undefined =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : undefined;
 
-type ApiUserSource = Pick<
-  User,
-  "id" | "firstName" | "lastName" | "name" | "email" | "isAdmin" | "createdAt"
->;
+type ApiUserSource = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  createdAt: Date;
+};
 
 export const toApiUser = (user: ApiUserSource): IUser => {
   const name = user.name || `${user.firstName} ${user.lastName}`.trim();
@@ -114,7 +118,7 @@ export const toApiOrder = (
     paidAt: order.paidAt || undefined,
     isDelivered: order.isDelivered,
     deliveredAt: order.deliveredAt || undefined,
-    status: order.status,
+    status: order.status as IOrder["status"],
     createdAt: order.createdAt,
   };
 };
