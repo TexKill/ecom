@@ -1,0 +1,9 @@
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'new_order';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'pending_payment';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'paid';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'confirmed';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'preparing_shipment';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'pickup_point';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'completed';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'return_requested';
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'returned';

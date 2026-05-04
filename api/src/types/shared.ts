@@ -1,9 +1,17 @@
 export const ORDER_STATUSES = [
-  "pending",
+  "new_order",
+  "pending_payment",
+  "paid",
   "processing",
+  "confirmed",
+  "preparing_shipment",
   "shipped",
+  "pickup_point",
   "delivered",
+  "completed",
   "cancelled",
+  "return_requested",
+  "returned",
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -47,4 +55,3 @@ export interface OrderItemBase<TProductId = string> {
   price: number;
   product: TProductId;
 }
-

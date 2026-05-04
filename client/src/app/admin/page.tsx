@@ -1033,18 +1033,32 @@ function AdminPageContent() {
                                 {statusMeta.label}
                               </span>
                               <select
-                                value={order.status || "pending"}
+                                value={order.status || "new_order"}
                                 onChange={(e) =>
                                   handleStatusChange(order._id, e.target.value as OrderStatus)
                                 }
                                 disabled={statusUpdatingId === order._id}
                                 className="rounded border border-gray-300 px-2 py-1 text-xs"
                               >
-                                <option value="pending">{t.orders.statusPending}</option>
+                                <option value="new_order">{t.orders.statusNewOrder}</option>
+                                <option value="pending_payment">
+                                  {t.orders.statusPendingPayment}
+                                </option>
+                                <option value="paid">{t.orders.statusPaid}</option>
                                 <option value="processing">{t.orders.statusProcessing}</option>
+                                <option value="confirmed">{t.orders.statusConfirmed}</option>
+                                <option value="preparing_shipment">
+                                  {t.orders.statusPreparingShipment}
+                                </option>
                                 <option value="shipped">{t.orders.statusShipped}</option>
+                                <option value="pickup_point">{t.orders.statusPickupPoint}</option>
                                 <option value="delivered">{t.orders.statusDelivered}</option>
+                                <option value="completed">{t.orders.statusCompleted}</option>
                                 <option value="cancelled">{t.orders.statusCancelled}</option>
+                                <option value="return_requested">
+                                  {t.orders.statusReturnRequested}
+                                </option>
+                                <option value="returned">{t.orders.statusReturned}</option>
                               </select>
                             </div>
                           </td>

@@ -127,7 +127,7 @@ export const createOrder = async (
       totalPrice,
       isPaid: false,
       isDelivered: false,
-      status: PrismaOrderStatus.pending,
+      status: PrismaOrderStatus.new_order,
       orderItems: {
         create: normalizedOrderItems.map((item) => ({
           id: generateDbId(),
@@ -185,7 +185,7 @@ export const getAdminOrderStats = async () => {
       prisma.order.count(),
       prisma.order.count({ where: { isPaid: true } }),
       prisma.order.count({ where: { isDelivered: true } }),
-      prisma.order.count({ where: { status: PrismaOrderStatus.pending } }),
+      prisma.order.count({ where: { status: PrismaOrderStatus.new_order } }),
       prisma.order.aggregate({ _sum: { totalPrice: true } }),
       prisma.order.aggregate({
         where: { isPaid: true },
@@ -393,8 +393,8 @@ export const handleLiqPayCallback = async (body: unknown) => {
       isPaid: isLiqPaySuccessStatus(status) ? true : order.isPaid,
       paidAt: isLiqPaySuccessStatus(status) && !order.isPaid ? new Date() : order.paidAt,
       status:
-        isLiqPaySuccessStatus(status) && order.status === PrismaOrderStatus.pending
-          ? PrismaOrderStatus.processing
+        isLiqPaySuccessStatus(status) && order.status === PrismaOrderStatus.new_order
+          ? PrismaOrderStatus.paid
           : order.status,
       paymentResult: paymentResult as unknown as Prisma.InputJsonValue,
     },
@@ -453,8 +453,8 @@ export const markOrderPaid = async (args: {
       isPaid: true,
       paidAt: new Date(),
       status:
-        order.status === PrismaOrderStatus.pending
-          ? PrismaOrderStatus.processing
+        order.status === PrismaOrderStatus.new_order
+          ? PrismaOrderStatus.paid
           : order.status,
       paymentResult: payment as unknown as Prisma.InputJsonValue,
     },

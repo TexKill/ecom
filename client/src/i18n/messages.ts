@@ -161,11 +161,19 @@ export type Messages = {
     paid: string;
     pending: string;
     status: string;
-    statusPending: string;
+    statusNewOrder: string;
+    statusPendingPayment: string;
+    statusPaid: string;
     statusProcessing: string;
+    statusConfirmed: string;
+    statusPreparingShipment: string;
     statusShipped: string;
+    statusPickupPoint: string;
     statusDelivered: string;
+    statusCompleted: string;
     statusCancelled: string;
+    statusReturnRequested: string;
+    statusReturned: string;
     paymentStatus: string;
     deliveryStatus: string;
     unpaid: string;
@@ -521,11 +529,19 @@ const en: Messages = {
     paid: "Paid",
     pending: "Pending",
     status: "Status",
-    statusPending: "Pending",
+    statusNewOrder: "New order",
+    statusPendingPayment: "Pending payment",
+    statusPaid: "Paid",
     statusProcessing: "Processing",
+    statusConfirmed: "Confirmed",
+    statusPreparingShipment: "Preparing shipment",
     statusShipped: "Shipped",
+    statusPickupPoint: "At pickup point",
     statusDelivered: "Delivered",
+    statusCompleted: "Completed",
     statusCancelled: "Cancelled",
+    statusReturnRequested: "Return requested",
+    statusReturned: "Returned",
     paymentStatus: "Payment",
     deliveryStatus: "Delivery",
     unpaid: "Unpaid",
@@ -893,11 +909,19 @@ const uk: Messages = {
     paid: "Оплачено",
     pending: "В очікуванні",
     status: "Статус",
-    statusPending: "В очікуванні",
+    statusNewOrder: "Нове замовлення",
+    statusPendingPayment: "Очікує оплати",
+    statusPaid: "Оплачено",
     statusProcessing: "В обробці",
+    statusConfirmed: "Підтверджено",
+    statusPreparingShipment: "Готується до відправки",
     statusShipped: "Відправлено",
+    statusPickupPoint: "У пункті видачі",
     statusDelivered: "Доставлено",
+    statusCompleted: "Завершено",
     statusCancelled: "Скасовано",
+    statusReturnRequested: "Запит на повернення",
+    statusReturned: "Повернено",
     paymentStatus: "Статус оплати",
     deliveryStatus: "Статус доставки",
     unpaid: "Не оплачено",
