@@ -4,6 +4,8 @@ import { setAuthCookies, clearAuthCookies } from "@/lib/cookies";
 
 interface User {
   _id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
   isAdmin: boolean;

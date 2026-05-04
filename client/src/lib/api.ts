@@ -34,6 +34,19 @@ export const getUserProfile = async () => {
   return data;
 };
 
+export const updateUserProfile = async (payload: {
+  firstName?: string;
+  lastName?: string;
+  currentPassword?: string;
+  password?: string;
+}) => {
+  const { data } = await axiosInstance.put<IUser & { token: string }>(
+    "/api/users/profile",
+    payload,
+  );
+  return data;
+};
+
 export const getProducts = async (
   keyword = "",
   pageNumber = 1,

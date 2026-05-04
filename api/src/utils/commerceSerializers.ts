@@ -24,13 +24,24 @@ type JsonObject = Record<string, unknown>;
 const asObject = (value: unknown): JsonObject | undefined =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as JsonObject) : undefined;
 
-export const toApiUser = (user: Pick<User, "id" | "name" | "email" | "isAdmin" | "createdAt">): IUser => ({
-  _id: user.id,
-  name: user.name,
-  email: user.email,
-  isAdmin: user.isAdmin,
-  createdAt: user.createdAt,
-});
+type ApiUserSource = Pick<
+  User,
+  "id" | "firstName" | "lastName" | "name" | "email" | "isAdmin" | "createdAt"
+>;
+
+export const toApiUser = (user: ApiUserSource): IUser => {
+  const name = user.name || `${user.firstName} ${user.lastName}`.trim();
+
+  return {
+    _id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    name,
+    email: user.email,
+    isAdmin: user.isAdmin,
+    createdAt: user.createdAt,
+  };
+};
 
 export const toApiCartItem = (item: CartItem): ICartItem => ({
   productId: item.productId,
@@ -78,7 +89,7 @@ export const toApiOrderItem = (item: OrderItem): IOrderItem => ({
 export const toApiOrder = (
   order: Order & {
     orderItems: OrderItem[];
-    user?: Pick<User, "id" | "name" | "email" | "isAdmin" | "createdAt">;
+    user?: ApiUserSource;
   },
 ): IOrder => {
   const shippingAddress = asObject(order.shippingAddress) as ShippingAddress | undefined;
@@ -88,13 +99,7 @@ export const toApiOrder = (
   return {
     _id: order.id,
     user: order.user
-      ? {
-          _id: order.user.id,
-          name: order.user.name,
-          email: order.user.email,
-          isAdmin: order.user.isAdmin,
-          createdAt: order.user.createdAt,
-        }
+      ? toApiUser(order.user)
       : order.userId,
     orderItems: order.orderItems.map(toApiOrderItem),
     shippingAddress: shippingAddress as ShippingAddress,

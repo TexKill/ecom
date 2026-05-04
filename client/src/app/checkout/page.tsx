@@ -80,10 +80,11 @@ export default function CheckoutPage() {
       router.replace("/cart");
       return;
     }
-    if (user.name) {
+    if (user.firstName || user.lastName || user.name) {
       const nameParts = user.name.trim().split(/\s+/).filter(Boolean);
-      const derivedFirstName = nameParts[0] || "";
-      const derivedLastName = nameParts.slice(1).join(" ");
+      const derivedFirstName = user.firstName || nameParts[0] || "";
+      const derivedLastName =
+        user.lastName || nameParts.slice(1).join(" ");
 
       if (!firstName && derivedFirstName) {
         setFirstName(derivedFirstName);

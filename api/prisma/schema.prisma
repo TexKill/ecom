@@ -29,6 +29,8 @@ enum OrderStatus {
 
 model User {
   id            String         @id @db.Char(24)
+  firstName     String
+  lastName      String
   name          String
   email         String         @unique
   password      String

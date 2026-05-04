@@ -195,6 +195,11 @@ export type Messages = {
     myOrders: string;
     adminDashboard: string;
     myAccount: string;
+    currentPassword: string;
+    newPassword: string;
+    editProfile: string;
+    profileUpdated: string;
+    profileUpdateFailed: string;
   };
   checkout: {
     account: string;
@@ -563,6 +568,11 @@ const en: Messages = {
     myOrders: "My Orders",
     adminDashboard: "Admin Dashboard",
     myAccount: "My Account",
+    currentPassword: "Current password",
+    newPassword: "New password",
+    editProfile: "Edit details",
+    profileUpdated: "Profile updated",
+    profileUpdateFailed: "Failed to update profile",
   },
   checkout: {
     account: "Account",
@@ -946,6 +956,11 @@ const uk: Messages = {
     myOrders: "Мої замовлення",
     adminDashboard: "Адмін панель",
     myAccount: "Мій кабінет",
+    currentPassword: "Поточний пароль",
+    newPassword: "Новий пароль",
+    editProfile: "Змінити дані",
+    profileUpdated: "Профіль оновлено",
+    profileUpdateFailed: "Не вдалося оновити профіль",
   },
   checkout: {
     ...en.checkout,

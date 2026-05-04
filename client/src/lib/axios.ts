@@ -20,6 +20,8 @@ const refreshClient = axios.create({
 
 type StoredUser = {
   _id: string;
+  firstName?: string;
+  lastName?: string;
   name: string;
   email: string;
   isAdmin: boolean;

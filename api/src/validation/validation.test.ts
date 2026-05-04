@@ -4,6 +4,7 @@ import { productIdParamSchema } from "./product";
 import { createOrderSchema } from "./order";
 import { toggleFavoriteSchema } from "./favorites";
 import { syncCartSchema } from "./cart";
+import { updateProfileSchema } from "./user";
 
 test("product id param accepts valid ObjectId", () => {
   const parsed = productIdParamSchema.parse({
@@ -56,4 +57,22 @@ test("cart schema requires ObjectId", () => {
       ],
     });
   });
+});
+
+test("profile password update requires current password", () => {
+  assert.throws(() => {
+    updateProfileSchema.parse({
+      password: "new-password",
+    });
+  });
+});
+
+test("profile schema accepts separate first and last name updates", () => {
+  const parsed = updateProfileSchema.parse({
+    firstName: "Jane",
+    lastName: "Doe",
+  });
+
+  assert.equal(parsed.firstName, "Jane");
+  assert.equal(parsed.lastName, "Doe");
 });

@@ -22,6 +22,8 @@ const liqPayCheckoutUrl = "https://www.liqpay.ua/api/3/checkout";
 
 const orderUserSelect = {
   id: true,
+  firstName: true,
+  lastName: true,
   name: true,
   email: true,
   isAdmin: true,

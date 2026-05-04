@@ -8,6 +8,8 @@ import type {
 
 export interface IUser {
   _id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   email: string;
   isAdmin: boolean;
