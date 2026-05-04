@@ -116,8 +116,10 @@ export default function CheckoutPage() {
   const getPromoErrorMessage = (rawMessage?: string) => {
     if (!rawMessage) return t.checkout.couponInvalid;
     if (rawMessage === "Promo code not found") return t.checkout.couponNotFound;
-    if (rawMessage === "Promo code is inactive") return t.checkout.couponInactive;
-    if (rawMessage === "Promo code has expired") return t.checkout.couponExpired;
+    if (rawMessage === "Promo code is inactive")
+      return t.checkout.couponInactive;
+    if (rawMessage === "Promo code has expired")
+      return t.checkout.couponExpired;
     if (rawMessage.startsWith("Minimum order amount")) {
       return t.checkout.couponMinOrder;
     }
@@ -224,8 +226,9 @@ export default function CheckoutPage() {
       setPromoCodeInput(result.promoCode.code);
       setMessage(t.checkout.couponApplied);
     } catch (err: unknown) {
-      const nextMessage = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
+      const nextMessage = (
+        err as { response?: { data?: { message?: string } } }
+      )?.response?.data?.message;
       setAppliedPromoCode(null);
       setMessage(getPromoErrorMessage(nextMessage));
     } finally {
@@ -252,7 +255,7 @@ export default function CheckoutPage() {
       />
 
       {message && (
-        <div className="mb-5 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
+        <div className="mb-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-600">
           {message}
         </div>
       )}
@@ -485,7 +488,9 @@ export default function CheckoutPage() {
               <input
                 type="text"
                 value={promoCodeInput}
-                onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                onChange={(e) =>
+                  setPromoCodeInput(e.target.value.toUpperCase())
+                }
                 placeholder={t.checkout.couponCode}
                 className="flex-1 rounded border border-gray-200 bg-gray-50 px-4 py-3 outline-none focus:border-red-400"
               />
