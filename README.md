@@ -13,6 +13,12 @@ Full-stack e-commerce app with separate `api` and `client` services.
 
 ## Quick Start
 
+Requirements:
+
+- Node.js 20+
+- npm
+- Docker Desktop
+
 ### Local
 
 ```bash
@@ -22,7 +28,8 @@ cd ecom
 cd api
 npm install
 cp .env.example .env
-npx prisma generate --config prisma.config.ts
+# update MONGODB_URL and POSTGRES_URL in api/.env, then:
+npm run prisma:generate
 
 cd ../client
 npm install
@@ -41,6 +48,17 @@ Open:
 
 - Client: `http://localhost:3000`
 - API: `http://localhost:9000`
+
+For the local Docker database services, these `api/.env` values are usually enough to get started:
+
+```env
+MONGODB_URL=mongodb://localhost:27017/ecom_catalog
+POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/ecom_commerce?schema=public
+REDIS_URL=redis://localhost:6379
+CORS_ORIGIN=http://localhost:3000
+CLIENT_URL=http://localhost:3000
+API_PUBLIC_URL=http://localhost:9000
+```
 
 ### Docker
 
@@ -219,6 +237,14 @@ Required API variables:
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
 
+Runtime and URL variables:
+
+- `PORT`
+- `LOG_LEVEL`
+- `CORS_ORIGIN`
+- `API_PUBLIC_URL`
+- `CLIENT_URL`
+
 Optional LiqPay variables:
 
 - `LIQPAY_PUBLIC_KEY`
@@ -230,6 +256,17 @@ Optional cache variables:
 - `REDIS_URL`
 - `REDIS_KEY_PREFIX`
 - `CACHE_TTL_SECONDS`
+
+Optional rate-limit variables:
+
+- `RATE_LIMIT_WINDOW_MS`
+- `RATE_LIMIT_MAX_REQUESTS`
+- `AUTH_RATE_LIMIT_WINDOW_MS`
+- `AUTH_RATE_LIMIT_MAX_REQUESTS`
+- `UPLOAD_RATE_LIMIT_WINDOW_MS`
+- `UPLOAD_RATE_LIMIT_MAX_REQUESTS`
+- `LIQPAY_CALLBACK_RATE_LIMIT_WINDOW_MS`
+- `LIQPAY_CALLBACK_RATE_LIMIT_MAX_REQUESTS`
 
 Client variable:
 
